@@ -19,12 +19,13 @@
 #define HEATER_TEMP_R_ON 1770
 #define HEATER_TEMP_R_OFF 896
 
-#define CHAMBER_TEMP_ON 60.0
-#define CHAMBER_TEMP_OFF_DEADBAND 1.0
+#define CHAMBER_TEMP_OFF 60.0
+#define CHAMBER_TEMP_ON_DEADBAND 1.0
 
 #define HEATER_RELAY_PIN 21
 
-float chamberTempOn = CHAMBER_TEMP_ON;
+u32 maxHeaterTimeMs = MAX_HEATER_TIME_MS;
+float chamberTempOff = CHAMBER_TEMP_OFF;
 u32 lastCycleTime = millis();
 int dhtReadFailCount = 0;
 float chamberTempDegC = 0.0;
@@ -41,6 +42,8 @@ void setup() {
 }
 
 void loop() {
+    receiveSerial();
+
     u32 currentTime = millis();
     if (currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
     lastCycleTime = currentTime;
@@ -96,7 +99,7 @@ void loop() {
 
     bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
 
-    if (currentTime > MAX_HEATER_TIME_MS) {
+    if (currentTime > maxHeaterTimeMs) {
         if (isHeaterOn) {
             Serial.println("Max heater time reached, stopping heater");
             digitalWrite(HEATER_RELAY_PIN, HIGH);
@@ -110,54 +113,51 @@ void loop() {
 
     Serial.println(isHeaterOn ? "Heater is ON" : "Heater is OFF");
 
-    if (!isHeaterOn && heaterTempR > HEATER_TEMP_R_ON && chamberTempDegC < (chamberTempOn - CHAMBER_TEMP_OFF_DEADBAND)) {
+    if (!isHeaterOn && heaterTempR > HEATER_TEMP_R_ON && chamberTempDegC < (chamberTempOff - CHAMBER_TEMP_ON_DEADBAND)) {
         Serial.println("Switching heater ON");
         digitalWrite(HEATER_RELAY_PIN, LOW);
         return;
     }
 
-    if (isHeaterOn && (heaterTempR < HEATER_TEMP_R_OFF || chamberTempDegC > chamberTempOn)) {
+    if (isHeaterOn && (heaterTempR < HEATER_TEMP_R_OFF || chamberTempDegC > chamberTempOff)) {
         Serial.println("Switching heater OFF");
         digitalWrite(HEATER_RELAY_PIN, HIGH);
     }
 
 }
 
-// void receiveSerial() {
-//     static const char endMarker = '\n';
-//     static char serialBuf[SERIAL_BUFFER_SIZE];
-//     static byte ndx;
-//     static char rc;
+void receiveSerial() {
+    static const char endMarker = '\n';
+    static char serialBuf[SERIAL_BUFFER_SIZE];
+    static byte ndx;
+    static char rc;
 
-//     if (Serial.available() == 0) return;
+    if (Serial.available() == 0) return;
 
-//     ndx = 0;
-//     memset(&serialBuf, 0, SERIAL_BUFFER_SIZE);
-//     while (Serial.available() > 0 && ndx < SERIAL_BUFFER_SIZE) {
-//         rc = Serial.read();
-//         if (rc == endMarker) break;
-//         serialBuf[ndx++] = rc;
-//     }
+    ndx = 0;
+    memset(&serialBuf, 0, SERIAL_BUFFER_SIZE);
+    while (Serial.available() > 0 && ndx < SERIAL_BUFFER_SIZE) {
+        rc = Serial.read();
+        if (rc == endMarker) break;
+        serialBuf[ndx++] = rc;
+    }
 
-//     if (strcmp(serialBuf, "temp up") == 0) {
-//         Serial.println("starting...");
-//         isStopped = 0;
-//     }
+    String message = String(serialBuf);
 
-//     if (strcmp(serialBuf, "stop") == 0) {
-//         Serial.println("stopping...");
-//         isStopped = 1;
-//     };
+    if (message.length() < 6) {
+        Serial.println("Invalid request");
+        return;
+    }
 
-//     if (strcmp(serialBuf, "faster") == 0) {
-//         sendInterval = sendInterval / 2;
-//         Serial.print("going faster, new interval:");
-//         Serial.println(sendInterval);
-//     };
+    if (message.startsWith("time ")) {
+        maxHeaterTimeMs = (u32)message.substring(5).toInt() * 3600e3;
+        Serial.print("new max heater time in hours: ");
+        Serial.println(maxHeaterTimeMs / 3600e3);
+    }
 
-//     if (strcmp(serialBuf, "slower") == 0) {
-//         sendInterval = sendInterval * 2;
-//         Serial.print("going slower, new interval:");
-//         Serial.println(sendInterval);
-//     };
-// }
+    if (message.startsWith("temp ")) {
+        chamberTempOff = message.substring(5).toInt();
+        Serial.print("new chamber max temp:");
+        Serial.println(chamberTempOff);
+    }
+}
