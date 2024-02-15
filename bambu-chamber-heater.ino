@@ -1,9 +1,11 @@
 #include <dhtnew.h>
 
 #define SERIAL_BAUD_RATE 115200
-#define LOOP_INTERVAL_MS 3e3
+#define LOOP_INTERVAL_MS 2500
+#define MAX_HEATER_TIME_MS 43200e3
 
 #define DHT_PIN 10
+#define DHT_MAX_FAIL_COUNT 2
 
 #define ANALOG_READ_CONVERSION_FACTOR 0.0048828125
 
@@ -23,6 +25,9 @@
 #define HEATER_RELAY_PIN 21
 
 float chamberTempOn = CHAMBER_TEMP_ON;
+u32 lastCycleTime = millis();
+int dhtReadFailCount = 0;
+float chamberTempDegC = 0.0;
 
 DHTNEW dht(DHT_PIN);
 
@@ -36,8 +41,6 @@ void setup() {
 }
 
 void loop() {
-    static u32 lastCycleTime = millis();
-
     u32 currentTime = millis();
     if (currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
     lastCycleTime = currentTime;
@@ -46,11 +49,19 @@ void loop() {
     if (chamberTempReadResult != DHTLIB_OK) {
         Serial.print("Failed to read chamber temp, read result: ");
         Serial.println(chamberTempReadResult);
-        digitalWrite(HEATER_RELAY_PIN, HIGH);
-        return;
-    }
 
-    float chamberTempDegC = dht.getTemperature();
+        dhtReadFailCount++;
+
+        if (dhtReadFailCount >= DHT_MAX_FAIL_COUNT) {
+            Serial.println("Too many failed chamber temp reads, stopping heater");
+            digitalWrite(HEATER_RELAY_PIN, HIGH);
+            return;
+        }
+    }
+    else {
+        dhtReadFailCount = 0;
+        chamberTempDegC = dht.getTemperature();
+    }
 
     Serial.print("Chamber temp degC: ");
     Serial.println(chamberTempDegC);
@@ -84,6 +95,18 @@ void loop() {
     Serial.println(heaterTempR);
 
     bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
+
+    if (currentTime > MAX_HEATER_TIME_MS) {
+        if (isHeaterOn) {
+            Serial.println("Max heater time reached, stopping heater");
+            digitalWrite(HEATER_RELAY_PIN, HIGH);
+        }
+        else {
+            Serial.println("Max heater time reached, heater already off");
+        }
+
+        return;
+    }
 
     Serial.println(isHeaterOn ? "Heater is ON" : "Heater is OFF");
 
