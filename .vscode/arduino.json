@@ -2,5 +2,5 @@
   "sketch": "bambu-chamber-heater.ino",
   "configuration": "cpu=16MHzatmega32U4",
   "board": "SparkFun:avr:promicro",
-  "port": "COM7"
+  "port": "COM4"
 }

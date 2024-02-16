@@ -13,11 +13,13 @@
 #define REF_VOLTAGE_PIN A1
 #define HEATER_TEMP_PIN A0
 #define HEATER_TEMP_REF_R 4700
+#define HEATER_TEMP_REF_V_MIN 4.8
+#define HEATER_TEMP_REF_V_MAX 5.2
 
 #define HEATER_TEMP_R_MAX 200000
 #define HEATER_TEMP_R_MIN 120
-#define HEATER_TEMP_R_ON 2940 // 130 degC
-#define HEATER_TEMP_R_OFF 2271 // 140 degC
+#define HEATER_TEMP_R_ON 14760 // 75 degC
+#define HEATER_TEMP_R_OFF 9100 // 90 degC
 
 #define CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 1.0
@@ -69,12 +71,14 @@ void loop() {
     Serial.print("Chamber temp degC: ");
     Serial.println(chamberTempDegC);
 
+    float vRefAvg = 0;
     float heaterTempR = 0;
     for (int i = 0; i < ANALOG_READ_COUNT; i++)
     {
         float vRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
+        vRefAvg += vRef;
 
-        if (vRef < 4.9 || vRef > 5.1) {
+        if (vRef < HEATER_TEMP_REF_V_MIN || vRef > HEATER_TEMP_REF_V_MAX) {
             Serial.print("Reference voltage out of bounds: ");
             Serial.println(vRef);
             digitalWrite(HEATER_RELAY_PIN, HIGH);
@@ -85,6 +89,7 @@ void loop() {
         heaterTempR += heaterTempVoltage * HEATER_TEMP_REF_R / (vRef - heaterTempVoltage);
     }
 
+    vRefAvg /= ANALOG_READ_COUNT;
     heaterTempR /= ANALOG_READ_COUNT;
 
     if (heaterTempR > HEATER_TEMP_R_MAX || heaterTempR < HEATER_TEMP_R_MIN) {
@@ -93,6 +98,9 @@ void loop() {
         digitalWrite(HEATER_RELAY_PIN, HIGH);
         return;
     }
+
+    Serial.print("vRef: ");
+    Serial.println(vRefAvg);
 
     Serial.print("Heater temp R: ");
     Serial.println(heaterTempR);
