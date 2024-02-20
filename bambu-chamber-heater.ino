@@ -21,7 +21,7 @@
 #define HEATER_TEMP_R_ON 7784 // 95 degC
 #define HEATER_TEMP_R_OFF 5070 // 110 degC
 
-#define CHAMBER_TEMP_OFF 60.0
+#define DEFAULT_CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 1.0
 
 #define HEATER_RELAY_PIN 21
@@ -33,7 +33,7 @@
     }\
 
 u32 maxHeaterTimeMs = MAX_HEATER_TIME_MS;
-float chamberTempOff = CHAMBER_TEMP_OFF;
+float chamberTempOff = DEFAULT_CHAMBER_TEMP_OFF;
 u32 lastCycleTime = millis();
 int dhtReadFailCount = 0;
 float chamberTempDegC = 0.0;
@@ -169,16 +169,26 @@ void receiveSerial() {
 
     String message = String(serialBuf);
 
-    if (message.length() < 6) {
+    if (message.length() != 4 && message.length() < 6) {
         Serial.println("Invalid request");
         return;
     }
 
+    if (message.equals("time")) {
+        Serial.print("heater time left in minutes: ");
+        Serial.println((int)((maxHeaterTimeMs - millis()) / 60e3));
+    }
+
     if (message.startsWith("time ")) {
-        u32 requestedTimeMs = (u32)message.substring(5).toInt() * 3600e3;
+        u32 requestedTimeMs = (u32)message.substring(5).toInt() * 60e3;
         maxHeaterTimeMs = requestedTimeMs + millis();
-        Serial.print("new max heater time in hours: ");
-        Serial.println(requestedTimeMs / 3600e3);
+        Serial.print("new max heater time in minutes: ");
+        Serial.println((int)(requestedTimeMs / 60e3));
+    }
+
+    if (message.equals("temp")) {
+        Serial.print("chamber temp set: ");
+        Serial.println(chamberTempOff);
     }
 
     if (message.startsWith("temp ")) {
