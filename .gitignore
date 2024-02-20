@@ -1,5 +1,5 @@
 #LTSpice temproray files
-LTSpice/**/*.op.raw
-LTSpice/**/*.log
-LTSpice/**/*.raw
+design/**/*.op.raw
+design/**/*.log
+design/**/*.raw
 
