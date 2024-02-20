@@ -18,19 +18,28 @@
 
 #define HEATER_TEMP_R_MAX 200000
 #define HEATER_TEMP_R_MIN 120
-#define HEATER_TEMP_R_ON 14760 // 75 degC
-#define HEATER_TEMP_R_OFF 9100 // 90 degC
+#define HEATER_TEMP_R_ON 7784 // 95 degC
+#define HEATER_TEMP_R_OFF 5070 // 110 degC
 
 #define CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 1.0
 
 #define HEATER_RELAY_PIN 21
 
+#define switchHeaterOff()\
+    if (isHeaterOn) {\
+        digitalWrite(HEATER_RELAY_PIN, HIGH);\
+        lastTimeOff = currentTime;\
+    }\
+
 u32 maxHeaterTimeMs = MAX_HEATER_TIME_MS;
 float chamberTempOff = CHAMBER_TEMP_OFF;
 u32 lastCycleTime = millis();
 int dhtReadFailCount = 0;
 float chamberTempDegC = 0.0;
+
+u32 lastTimeOn = 0;
+u32 lastTimeOff = 0;
 
 DHTNEW dht(DHT_PIN);
 
@@ -50,6 +59,9 @@ void loop() {
     if (currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
     lastCycleTime = currentTime;
 
+    bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
+    Serial.println(isHeaterOn ? "Heater is ON" : "Heater is OFF");
+
     int chamberTempReadResult = dht.read();
     if (chamberTempReadResult != DHTLIB_OK) {
         Serial.print("Failed to read chamber temp, read result: ");
@@ -58,8 +70,8 @@ void loop() {
         dhtReadFailCount++;
 
         if (dhtReadFailCount >= DHT_MAX_FAIL_COUNT) {
-            Serial.println("Too many failed chamber temp reads, stopping heater");
-            digitalWrite(HEATER_RELAY_PIN, HIGH);
+            Serial.println("Too many failed chamber temp reads");
+            switchHeaterOff();
             return;
         }
     }
@@ -81,7 +93,7 @@ void loop() {
         if (vRef < HEATER_TEMP_REF_V_MIN || vRef > HEATER_TEMP_REF_V_MAX) {
             Serial.print("Reference voltage out of bounds: ");
             Serial.println(vRef);
-            digitalWrite(HEATER_RELAY_PIN, HIGH);
+            switchHeaterOff();
             return;
         }
 
@@ -95,7 +107,7 @@ void loop() {
     if (heaterTempR > HEATER_TEMP_R_MAX || heaterTempR < HEATER_TEMP_R_MIN) {
         Serial.print("Heater temperature resistance out of bounds: ");
         Serial.println(heaterTempR);
-        digitalWrite(HEATER_RELAY_PIN, HIGH);
+        switchHeaterOff();
         return;
     }
 
@@ -105,12 +117,10 @@ void loop() {
     Serial.print("Heater temp R: ");
     Serial.println(heaterTempR);
 
-    bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
-
     if (currentTime > maxHeaterTimeMs) {
         if (isHeaterOn) {
             Serial.println("Max heater time reached, stopping heater");
-            digitalWrite(HEATER_RELAY_PIN, HIGH);
+            switchHeaterOff();
         }
         else {
             Serial.println("Max heater time reached, heater already off");
@@ -119,19 +129,26 @@ void loop() {
         return;
     }
 
-    Serial.println(isHeaterOn ? "Heater is ON" : "Heater is OFF");
-
-    if (!isHeaterOn && heaterTempR > HEATER_TEMP_R_ON && chamberTempDegC < (chamberTempOff - CHAMBER_TEMP_ON_DEADBAND)) {
-        Serial.println("Switching heater ON");
-        digitalWrite(HEATER_RELAY_PIN, LOW);
+    if (isHeaterOn && (heaterTempR < HEATER_TEMP_R_OFF || chamberTempDegC > chamberTempOff)) {
+        Serial.println("Switching heater OFF");
+        switchHeaterOff();
         return;
     }
 
-    if (isHeaterOn && (heaterTempR < HEATER_TEMP_R_OFF || chamberTempDegC > chamberTempOff)) {
-        Serial.println("Switching heater OFF");
-        digitalWrite(HEATER_RELAY_PIN, HIGH);
-    }
+    if (!isHeaterOn && heaterTempR > HEATER_TEMP_R_ON && chamberTempDegC < (chamberTempOff - CHAMBER_TEMP_ON_DEADBAND)) {
 
+        if (lastTimeOff > 0 && lastTimeOn > 0) {
+            u32 lastOffCycle = currentTime - lastTimeOff;
+            u32 lastOnCycle = lastTimeOff - lastTimeOn;
+            float dutyCycle = (float)lastOnCycle / (lastOffCycle + lastOnCycle);
+            Serial.print("Last duty cycle:");
+            Serial.println(dutyCycle);
+        }
+
+        Serial.println("Switching heater ON");
+        digitalWrite(HEATER_RELAY_PIN, LOW);
+        lastTimeOn = currentTime;
+    }
 }
 
 void receiveSerial() {
