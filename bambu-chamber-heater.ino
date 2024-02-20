@@ -175,9 +175,10 @@ void receiveSerial() {
     }
 
     if (message.startsWith("time ")) {
-        maxHeaterTimeMs = (u32)message.substring(5).toInt() * 3600e3;
+        u32 requestedTimeMs = (u32)message.substring(5).toInt() * 3600e3;
+        maxHeaterTimeMs = requestedTimeMs + millis();
         Serial.print("new max heater time in hours: ");
-        Serial.println(maxHeaterTimeMs / 3600e3);
+        Serial.println(requestedTimeMs / 3600e3);
     }
 
     if (message.startsWith("temp ")) {
