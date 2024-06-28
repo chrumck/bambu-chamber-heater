@@ -19,9 +19,11 @@
 #define HEATER_TEMP_R_MAX 200000
 #define HEATER_TEMP_R_MIN 120
 // #define HEATER_TEMP_R_ON 7784 // 95 degC
-#define HEATER_TEMP_R_ON 5070 // 110 degC
+// #define HEATER_TEMP_R_ON 5070 // 110 degC
+#define HEATER_TEMP_R_ON 4410 // 115 degC
 // #define HEATER_TEMP_R_OFF 5070 // 110 degC
-#define HEATER_TEMP_R_OFF 3850 // 120 degC
+// #define HEATER_TEMP_R_OFF 3850 // 120 degC
+#define HEATER_TEMP_R_OFF 3340 // 125 degC
 
 #define DEFAULT_CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
@@ -119,13 +121,17 @@ void loop() {
     Serial.print("Heater temp R: ");
     Serial.println(heaterTempR);
 
-    if (currentTime > maxHeaterTimeMs) {
+    u32 timeLeftToRunMs = currentTime > maxHeaterTimeMs ? 0 : maxHeaterTimeMs - currentTime;
+    Serial.print("Time left in minutes: ");
+    Serial.println(timeLeftToRunMs / 60000);
+
+    if (timeLeftToRunMs == 0) {
         if (isHeaterOn) {
             Serial.println("Max heater time reached, stopping heater");
             switchHeaterOff();
         }
         else {
-            Serial.println("Max heater time reached, heater already off");
+            Serial.println("Max heater time reached, heater off");
         }
 
         return;
