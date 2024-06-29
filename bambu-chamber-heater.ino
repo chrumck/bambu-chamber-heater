@@ -68,9 +68,8 @@ void loop() {
 
     int chamberTempReadResult = dht.read();
     if (chamberTempReadResult != DHTLIB_OK) {
-        Serial.println();
-        Serial.print("Failed to read chamber temp, read result: ");
-        Serial.println(chamberTempReadResult);
+        Serial.print("Failed chamber temp read, result: ");
+        Serial.print(chamberTempReadResult);
 
         dhtReadFailCount++;
 
