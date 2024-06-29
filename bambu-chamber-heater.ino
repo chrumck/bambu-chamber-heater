@@ -64,10 +64,11 @@ void loop() {
     lastCycleTime = currentTime;
 
     bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
-    Serial.println(isHeaterOn ? "Heater is ON" : "Heater is OFF");
+    Serial.print(isHeaterOn ? "Heater is ON" : "Heater is OFF");
 
     int chamberTempReadResult = dht.read();
     if (chamberTempReadResult != DHTLIB_OK) {
+        Serial.println();
         Serial.print("Failed to read chamber temp, read result: ");
         Serial.println(chamberTempReadResult);
 
@@ -84,8 +85,8 @@ void loop() {
         chamberTempDegC = dht.getTemperature();
     }
 
-    Serial.print("Chamber temp degC: ");
-    Serial.println(chamberTempDegC);
+    Serial.print("; chamber degC: ");
+    Serial.print(chamberTempDegC);
 
     float vRefAvg = 0;
     float heaterTempR = 0;
@@ -95,6 +96,7 @@ void loop() {
         vRefAvg += vRef;
 
         if (vRef < HEATER_TEMP_REF_V_MIN || vRef > HEATER_TEMP_REF_V_MAX) {
+            Serial.println();
             Serial.print("Reference voltage out of bounds: ");
             Serial.println(vRef);
             switchHeaterOff();
@@ -109,20 +111,21 @@ void loop() {
     heaterTempR /= ANALOG_READ_COUNT;
 
     if (heaterTempR > HEATER_TEMP_R_MAX || heaterTempR < HEATER_TEMP_R_MIN) {
+        Serial.println();
         Serial.print("Heater temperature resistance out of bounds: ");
         Serial.println(heaterTempR);
         switchHeaterOff();
         return;
     }
 
-    Serial.print("vRef: ");
-    Serial.println(vRefAvg);
+    Serial.print("; vRef: ");
+    Serial.print(vRefAvg);
 
-    Serial.print("Heater temp R: ");
-    Serial.println(heaterTempR);
+    Serial.print("; heater R: ");
+    Serial.print(heaterTempR);
 
     u32 timeLeftToRunMs = currentTime > maxHeaterTimeMs ? 0 : maxHeaterTimeMs - currentTime;
-    Serial.print("Time left in minutes: ");
+    Serial.print("; time left mins: ");
     Serial.println(timeLeftToRunMs / 60000);
 
     if (timeLeftToRunMs == 0) {
