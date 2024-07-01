@@ -68,7 +68,7 @@ void loop() {
 
     int chamberTempReadResult = dht.read();
     if (chamberTempReadResult != DHTLIB_OK) {
-        Serial.print("Failed chamber temp read, result: ");
+        Serial.print("; Failed chamber temp read, result: ");
         Serial.print(chamberTempReadResult);
 
         dhtReadFailCount++;
@@ -125,18 +125,21 @@ void loop() {
 
     u32 timeLeftToRunMs = currentTime > maxHeaterTimeMs ? 0 : maxHeaterTimeMs - currentTime;
     Serial.print("; time left mins: ");
-    Serial.println(timeLeftToRunMs / 60000);
+    Serial.print(timeLeftToRunMs / 60000);
 
     if (timeLeftToRunMs == 0) {
         if (isHeaterOn) {
-            Serial.println("Max heater time reached, stopping heater");
+            Serial.println("; Max heater time reached, stopping heater");
             switchHeaterOff();
         }
         else {
-            Serial.println("Max heater time reached, heater off");
+            Serial.println("; Max heater time reached, heater off");
         }
 
         return;
+    }
+    else {
+        Serial.println();
     }
 
     if (isHeaterOn && (heaterTempR < HEATER_TEMP_R_OFF || chamberTempDegC > chamberTempOff)) {
