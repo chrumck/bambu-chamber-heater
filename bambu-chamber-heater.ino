@@ -36,14 +36,14 @@
         lastTimeOff = currentTime;\
     }\
 
-u32 maxHeaterTimeMs = MAX_HEATER_TIME_MS;
+u32_t maxHeaterTimeMs = MAX_HEATER_TIME_MS;
 float chamberTempOff = DEFAULT_CHAMBER_TEMP_OFF;
-u32 lastCycleTime = millis();
+u32_t lastCycleTime = millis();
 int dhtReadFailCount = 0;
 float chamberTempDegC = 0.0;
 
-u32 lastTimeOn = 0;
-u32 lastTimeOff = 0;
+u32_t lastTimeOn = 0;
+u32_t lastTimeOff = 0;
 
 DHTNEW dht(DHT_PIN);
 
@@ -59,7 +59,7 @@ void setup() {
 void loop() {
     receiveSerial();
 
-    u32 currentTime = millis();
+    u32_t currentTime = millis();
     if (currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
     lastCycleTime = currentTime;
 
@@ -123,7 +123,7 @@ void loop() {
     Serial.print("; heater R: ");
     Serial.print(heaterTempR);
 
-    u32 timeLeftToRunMs = currentTime > maxHeaterTimeMs ? 0 : maxHeaterTimeMs - currentTime;
+    u32_t timeLeftToRunMs = currentTime > maxHeaterTimeMs ? 0 : maxHeaterTimeMs - currentTime;
     Serial.print("; time left mins: ");
     Serial.print(timeLeftToRunMs / 60000);
 
@@ -151,8 +151,8 @@ void loop() {
     if (!isHeaterOn && heaterTempR > HEATER_TEMP_R_ON && chamberTempDegC < (chamberTempOff - CHAMBER_TEMP_ON_DEADBAND)) {
 
         if (lastTimeOff > 0 && lastTimeOn > 0) {
-            u32 lastOffCycle = currentTime - lastTimeOff;
-            u32 lastOnCycle = lastTimeOff - lastTimeOn;
+            u32_t lastOffCycle = currentTime - lastTimeOff;
+            u32_t lastOnCycle = lastTimeOff - lastTimeOn;
             float dutyCycle = (float)lastOnCycle / (lastOffCycle + lastOnCycle);
             Serial.print("Last duty cycle:");
             Serial.println(dutyCycle);
@@ -193,7 +193,7 @@ void receiveSerial() {
     }
 
     if (message.startsWith("time ")) {
-        u32 requestedTimeMs = (u32)message.substring(5).toInt() * 60e3;
+        u32_t requestedTimeMs = (u32)message.substring(5).toInt() * 60e3;
         maxHeaterTimeMs = requestedTimeMs + millis();
         Serial.print("new max heater time in minutes: ");
         Serial.println((int)(requestedTimeMs / 60e3));

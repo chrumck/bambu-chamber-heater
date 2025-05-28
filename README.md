@@ -2,4 +2,6 @@
 
 ## Description
 
-Code for Bambu Lab X1 Carbon chamber heater controller. The controller is built with Arduino Pro Micro. It drives a relay switching the chamber heater on or off. The input are two temperature sensors, the chamber temp sensor and the heater core temp sensor.
+Code for Bambu Lab X1 Carbon chamber heater controller.
+It controls the chamber heater fan, heater core, the chamber light, and the external enclosure fan.
+The input are two temperature sensors, the chamber temp sensor and the heater core temp sensor.
