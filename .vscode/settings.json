@@ -1,10 +1,13 @@
 {
-    "cSpell.words": [
-        "Adafruit",
-        "Bambu",
-        "DEADBAND",
-        "DHTLIB",
-        "DHTNEW",
-        "DHTTYPE"
-    ]
+  "files.exclude": {
+    "node_modules/": true
+  },
+  "cSpell.words": [
+    "Adafruit",
+    "Bambu",
+    "DEADBAND",
+    "DHTLIB",
+    "DHTNEW",
+    "DHTTYPE"
+  ]
 }
