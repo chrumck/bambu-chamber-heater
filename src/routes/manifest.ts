@@ -3,9 +3,9 @@ const manifest = {
   short_name: "KNTTRL",
   icons: [
     {
-      src: "http://localhost:5173/pig0_512.png",
+      src: "http://localhost:5173/pig0_512.webp",
       sizes: "128x128 192x192 512x512",
-      type: "image/png",
+      type: "image/webp",
     },
   ],
   description: "The only true Troller for KnurTory",
