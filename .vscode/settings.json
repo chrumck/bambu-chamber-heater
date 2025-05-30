@@ -8,6 +8,7 @@
     "DEADBAND",
     "DHTLIB",
     "DHTNEW",
-    "DHTTYPE"
+    "DHTTYPE",
+    "KNTTRL"
   ]
 }

@@ -1,8 +1,15 @@
 <script>
+  import manifest from "./manifest";
+
   const value = "/tutorial/image.gif";
 </script>
 
 <svelte:head>
+  <link
+    rel="manifest"
+    href="data:application/manifest+json,{encodeURIComponent(manifest)}"
+  />
+
   <style>
     p {
       color: goldenrod;
