@@ -8,6 +8,11 @@
 
   onMount(async () => {
     const iconUrl = await getObjectUrlFromUrl(icon);
+
+    window.document
+      .querySelector("#favicon-placeholder")
+      ?.setAttribute("href", iconUrl);
+
     const manifestUrl = getObjectUrl(
       getManifest(iconUrl),
       "application/manifest+json"
@@ -20,8 +25,6 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" href={icon} />
-
   <style>
     p {
       color: goldenrod;
