@@ -1,14 +1,22 @@
-<script>
-  import manifest from "./manifest";
+<script lang="ts">
+  import icon from "$lib/assets/pig0_512.webp";
+  import { getManifestUrl } from "./manifest";
+
+  const manifestURL = getManifestUrl(icon);
 
   const value = "/tutorial/image.gif";
 </script>
 
+<svelte:window
+  onload={() => {
+    window.document
+      .querySelector("#manifest-placeholder")
+      ?.setAttribute("href", manifestURL);
+  }}
+/>
+
 <svelte:head>
-  <link
-    rel="manifest"
-    href="data:application/manifest+json,{encodeURIComponent(manifest)}"
-  />
+  <link rel="icon" href={icon} />
 
   <style>
     p {
