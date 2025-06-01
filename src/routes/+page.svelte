@@ -1,8 +1,12 @@
 <script lang="ts">
   import icon from "$lib/assets/pig0_512.webp";
-  import { getManifestUrl } from "./manifest";
+  import { getManifest } from "./manifest";
+  import { getObjectUrl } from "$lib";
 
-  const manifestURL = getManifestUrl(icon);
+  const manifestURL = getObjectUrl(
+    getManifest(icon),
+    "application/manifest+json"
+  );
 
   const value = "/tutorial/image.gif";
 </script>

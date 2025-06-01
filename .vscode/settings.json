@@ -2,6 +2,7 @@
   "files.exclude": {
     "node_modules/": true
   },
+  "editor.rulers": [120],
   "cSpell.words": [
     "Adafruit",
     "Bambu",
