@@ -1,23 +1,23 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import icon from "$lib/assets/pig0_512.webp";
   import { getManifest } from "./manifest";
-  import { getObjectUrl } from "$lib";
-
-  const manifestURL = getObjectUrl(
-    getManifest(icon),
-    "application/manifest+json"
-  );
+  import { getObjectUrl, getObjectUrlFromUrl } from "$lib";
 
   const value = "/tutorial/image.gif";
-</script>
 
-<svelte:window
-  onload={() => {
+  onMount(async () => {
+    const iconUrl = await getObjectUrlFromUrl(icon);
+    const manifestUrl = getObjectUrl(
+      getManifest(iconUrl),
+      "application/manifest+json"
+    );
+
     window.document
       .querySelector("#manifest-placeholder")
-      ?.setAttribute("href", manifestURL);
-  }}
-/>
+      ?.setAttribute("href", manifestUrl);
+  });
+</script>
 
 <svelte:head>
   <link rel="icon" href={icon} />
