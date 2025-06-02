@@ -1,27 +1,32 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { type Attachment } from "svelte/attachments";
   import icon from "$lib/assets/pig0_512.webp";
-  import { getManifest } from "./manifest";
-  import { getObjectUrl, getObjectUrlFromUrl } from "$lib";
+  import { getManifest, getObjectUrl, getObjectUrlFromUrl } from "$lib";
 
   const { children } = $props();
 
-  onMount(async () => {
-    const iconUrl = await getObjectUrlFromUrl(icon);
+  const loadIcon: Attachment = (element) => {
+    (async () => {
+      const iconUrl = await getObjectUrlFromUrl(icon);
+      element.setAttribute("href", iconUrl);
+    })();
+  };
 
-    window.document
-      .querySelector("#favicon-placeholder")
-      ?.setAttribute("href", iconUrl);
-
-    const manifestUrl = getObjectUrl(
-      getManifest(iconUrl),
-      "application/manifest+json"
-    );
-
-    window.document
-      .querySelector("#manifest-placeholder")
-      ?.setAttribute("href", manifestUrl);
-  });
+  const loadManifest: Attachment = (element) => {
+    (async () => {
+      const iconUrl = await getObjectUrlFromUrl(icon);
+      const manifestUrl = getObjectUrl(
+        getManifest(iconUrl),
+        "application/manifest+json"
+      );
+      element.setAttribute("href", manifestUrl);
+    })();
+  };
 </script>
+
+<svelte:head>
+  <link rel="icon" {@attach loadIcon} />
+  <link rel="manifest" {@attach loadManifest} />
+</svelte:head>
 
 {@render children()}
