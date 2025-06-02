@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Attachment } from "svelte/attachments";
+  import type { Attachment } from "svelte/attachments";
   import icon from "$lib/assets/pig0_512.webp";
   import { getManifest, getObjectUrl, getObjectUrlFromUrl } from "$lib";
 
