@@ -13,6 +13,6 @@ export const getManifest = (iconSrc: string) => ({
   description: "The only true Troller for KnurTory",
   start_url: page.url.href,
   display: "standalone",
-  theme_color: "#231F20",
-  background_color: "#231F20",
+  theme_color: "#262626",
+  background_color: "#262626",
 });
