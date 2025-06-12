@@ -1,33 +1,19 @@
 <script lang="ts">
+  import { connectWebSocket, defaultAppState, type AppState } from "$lib";
   import { onMount } from "svelte";
 
-  const value = "/tutorial/image.gif";
+  const appState: AppState = $state(defaultAppState);
 
-  let socket: WebSocket;
-
-  onMount(() => {
-    socket = new WebSocket("ws://localhost:8000/chat");
-
-    socket.addEventListener("open", () => {
-      console.log("WebSocket connection opened");
-    });
-
-    socket.addEventListener("message", (event) => {
-      console.log("Message from server:", event.data);
-    });
-
-    socket.addEventListener("close", () => {
-      console.log("WebSocket connection closed");
-    });
-
-    return () => {
-      socket.close();
-    };
-  });
+  onMount(() => connectWebSocket(appState));
 </script>
 
 <svelte:head>
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
     p {
       color: goldenrod;
       font-family: "Comic Sans MS", cursive;
@@ -36,7 +22,9 @@
   </style>
 </svelte:head>
 
+<div class="mainContainer"></div>
+
 <h1>Welcome to SvelteKit</h1>
 <p>
-  Visit <a href="https://svelte.dev/docs/kit">{value}</a> to read the documentation
+  Visit <a href="https://svelte.dev/docs/kit">foo</a> to read the documentation
 </p>
