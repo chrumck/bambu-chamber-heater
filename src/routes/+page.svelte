@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { connectWebSocket, defaultAppState, type AppState } from "$lib";
   import { onMount } from "svelte";
 
   const appState: AppState = $state(defaultAppState);
+  const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
 
-  onMount(() => connectWebSocket(appState));
+  onMount(() => connectWebSocket(appState, webSocketUrl));
 </script>
 
 <svelte:head>
