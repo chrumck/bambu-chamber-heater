@@ -10,6 +10,7 @@
 </script>
 
 <div id="mainContainer">
+  <h2>KnurToryTroller</h2>
   <div class="switch">
     <span class="label">Light</span>
     <label for="light">
