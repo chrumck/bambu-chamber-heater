@@ -16,10 +16,10 @@ export const defaultAppState: AppState = {
   lightOn: false,
   heaterFanSet: false,
   heaterFanOn: false,
-  auxFanSet: false,
-  auxFanOn: false,
   doorVentFanSet: false,
   doorVentFanOn: false,
+  auxFanSet: false,
+  auxFanOn: false,
 };
 
 /**
@@ -58,8 +58,8 @@ export const enum WsMessageFlags {
   LightOn = 1,
   HeaterFanSet = 2,
   HeaterFanOn = 3,
-  AuxFanSet = 4,
-  AuxFanOn = 5,
-  DoorVentFanSet = 6,
-  DoorVentFanOn = 7,
+  DoorVentFanSet = 4,
+  DoorVentFanOn = 5,
+  AuxFanSet = 6,
+  AuxFanOn = 7,
 }

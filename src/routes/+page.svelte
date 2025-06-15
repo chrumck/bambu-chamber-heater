@@ -10,8 +10,32 @@
 </script>
 
 <div id="mainContainer">
-  <h1>Welcome to SvelteKit</h1>
-  <p>
-    Visit <a href="https://svelte.dev/docs/kit">foo</a> to read the documentation
-  </p>
+  <div class="switch">
+    <span class="label">Light</span>
+    <label for="light">
+      <input type="checkbox" id="light" />
+    </label>
+    <span class="led"></span>
+  </div>
+  <div class="switch">
+    <span class="label">Heater Fan</span>
+    <label for="heaterFanSet">
+      <input type="checkbox" id="heaterFanSet" />
+    </label>
+    <span class="led"></span>
+  </div>
+  <div class="switch">
+    <span class="label">Door Fan</span>
+    <label for="doorFanSet">
+      <input type="checkbox" id="doorFanSet" />
+    </label>
+    <span class="led"></span>
+  </div>
+  <div class="switch">
+    <span class="label">Aux Fan</span>
+    <label for="auxFanSet">
+      <input type="checkbox" id="auxFanSet" />
+    </label>
+    <span class="led"></span>
+  </div>
 </div>
