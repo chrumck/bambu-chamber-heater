@@ -9,6 +9,7 @@
 :root {
   --clr-white: #e4e4e4;
   --clr-bkg: #151515;
+  --clr-green: rgb(0, 164, 0);
 }
 
 body {
@@ -37,134 +38,16 @@ body {
   border-color: var(--clr-white);
 }
 
-#mainContainer h2 {
-  margin: 0.5rem;
-  color: #9b9b9b;
-}
-
-.switch {
-  --switch-width: 4rem;
-  --switch-height: calc(var(--switch-width) / 2);
-  --switch-text-size: 0.75rem;
-  --switch-clr: rgba(255, 255, 255, 0.4);
-  --switch-clr-bg: var(--clr-bkg);
-  --switch-clr-bg-on: rgb(0, 164, 0);
-  --switch-inset: 2px;
-  --switch-duration: 300ms;
-
-  --toggle-size: calc(var(--switch-height) - var(--switch-inset) * 3);
-  --toggle-gap: calc(var(--toggle-size) * 1.4);
-  --toggle-padding-left: calc(var(--toggle-size) * 0.2);
-  --toggle-bg: var(--switch-clr);
-  --toggle-bg-on: var(--clr-white);
-
-  --led-size: 0.75rem;
-  --led-color: var(--switch-clr-bg);
-  --led-color-on: rgb(50, 159, 255);
-  --led-duration: 100ms;
-  --led-blur: calc(var(--led-size) * 0.5);
-  --led-blur-distance: -0.5rem;
-  --led-blur-opacity: 0.3;
-
-  padding: 1rem 1.2rem 1rem 1rem;
-  color: var(--clr-white);
-  font-size: 1rem;
-
-  display: flex;
-  flex-direction: row;
-  justify-content: end;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-/* switch "on" */
-.switch:has(input[type="checkbox"]:checked) {
-  --switch-clr-bg: var(--switch-clr-bg-on);
-  --toggle-x: calc(50% + var(--switch-inset));
-  --toggle-bg: var(--toggle-bg-on);
-  --led-color: var(--led-color-on);
-}
-
-.switch:has(input[type="checkbox"]:focus-visible) label {
-  outline-color: white;
-}
-
-.switch label {
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-  width: var(--switch-width);
-  height: var(--switch-height);
-  border-radius: 999vw;
-  border: 1px solid var(--switch-clr);
-  outline: 1px dashed transparent;
-  outline-offset: 4px;
-  background-color: var(--switch-clr-bg);
-  isolation: isolate;
-  transition-property: background-color;
-  transition-duration: var(--switch-duration);
-  transition-timing-function: ease-in-out;
-}
-
-.switch input[type="checkbox"] {
-  position: absolute;
-  pointer-events: none;
-  appearance: none;
-  border: none;
-  outline: none;
-  border-radius: inherit;
-  background-color: var(--toggle-bg);
-  top: var(--switch-inset);
-  left: var(--toggle-x, var(--switch-inset));
-  width: var(--toggle-size);
-  height: var(--toggle-size);
+#mainHeader {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--toggle-gap);
-  padding-left: var(--toggle-padding-left);
-  transition-property: left, background-color;
-  transition-duration: var(--switch-duration);
-  transition-timing-function: ease-in-out;
+  gap: 0.5rem;
+  color: #b5b5b5;
 }
 
-.switch input[type="checkbox"]::before,
-.switch input[type="checkbox"]::after {
-  font-size: var(--switch-text-size);
-  position: relative;
-}
-
-.switch input[type="checkbox"]::before {
-  content: "ON";
-  color: var(--clr-white);
-}
-
-.switch input[type="checkbox"]::after {
-  content: "OFF";
-  color: var(--switch-clr);
-}
-
-.switch > .led {
-  position: relative;
-  width: var(--led-size);
-  height: var(--led-size);
-  border: 1px solid var(--switch-clr);
-  border-radius: 50%;
-  background-color: var(--led-color);
-  transition-property: background-color;
-  transition-duration: var(--led-duration);
-  transition-timing-function: ease-in-out;
-}
-
-.switch > .led:before {
-  content: "";
-  position: absolute;
-  inset: var(--led-blur-distance);
-  border-radius: inherit;
-  background-color: var(--led-color);
-  filter: blur(var(--led-blur));
-  opacity: var(--led-blur-opacity);
-  transition-property: background-color;
-  transition-duration: var(--led-duration);
-  transition-timing-function: ease-in-out;
+#mainHeader svg {
+  fill: var(--clr-green);
+  font-size: 1.5rem;
+  font-weight: 600;
 }
