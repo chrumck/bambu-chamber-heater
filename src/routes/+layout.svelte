@@ -23,7 +23,7 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" {@attach loadIcon} />
+  <link rel="icon" href="data:," {@attach loadIcon} />
   <link rel="manifest" {@attach loadManifest} />
 </svelte:head>
 
