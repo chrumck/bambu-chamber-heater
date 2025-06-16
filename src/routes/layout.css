@@ -22,32 +22,3 @@ body {
   background-size: 40px 40px;
   overflow: hidden;
 }
-
-#mainContainer {
-  padding: 0.75rem;
-
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-
-  text-align: center;
-  background-color: var(--clr-bkg);
-  border-radius: 0.6rem;
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--clr-white);
-}
-
-#mainHeader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: #b5b5b5;
-}
-
-#mainHeader svg {
-  fill: var(--clr-green);
-  font-size: 1.5rem;
-  font-weight: 600;
-}
