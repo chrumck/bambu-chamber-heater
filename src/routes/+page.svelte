@@ -14,7 +14,7 @@
 
 <div id="mainContainer">
   <MainHeader />
-  <fieldset class="gaugesContainer">
+  <fieldset class="sectionContainer sectionContainerHorizontal">
     <legend>Chamber Temp °C</legend>
     <fieldset class="gauge">
       <legend>Current</legend>
@@ -24,37 +24,42 @@
       <legend>Target</legend>
       <input type="number" value={appState.tempSetDegC} disabled />
     </fieldset>
-    <input type="button" value="SET" />
+    <input class="setButton" type="button" value="SET" />
   </fieldset>
-  <fieldset class="gaugesContainer">
+
+  <fieldset class="sectionContainer sectionContainerVertical">
     <legend>Heater</legend>
-    <fieldset class="gauge" id="heaterOnGauge">
-      <legend>Heater On</legend>
-      <Led on={appState.heaterOn} />
-    </fieldset>
-    <fieldset class="gauge">
-      <legend>Time Left Mins</legend>
-      <input type="number" value={appState.heaterOnTimeLeftMins} disabled />
-    </fieldset>
-    <input type="button" value="SET" />
+    <div class="sectionContainerHorizontal">
+      <div class="gauge" id="heaterOnGauge">
+        <Led on={appState.heaterOn} />
+        <span>Heater On</span>
+      </div>
+      <fieldset class="gauge">
+        <legend>Time Left Mins</legend>
+        <input type="number" value={appState.heaterOnTimeLeftMins} disabled />
+      </fieldset>
+      <input class="setButton" type="button" value="SET" />
+    </div>
+    <div class="sectionContainerHorizontal">
+      <div class="gaugeHorizontal">
+        <label for="heaterR">Heater R:</label>
+        <input id="heaterR" type="number" value={appState.heaterR} disabled />
+      </div>
+      <div class="gaugeHorizontal">
+        <label for="heaterDutyCycle">Duty Cycle:</label>
+        <input id="heaterDutyCycle" type="number" value={appState.heaterDutyCycle} disabled />
+      </div>
+    </div>
   </fieldset>
 
-  <fieldset class="gaugesContainer">
-    <legend>Heater Data</legend>
-    <div class="gaugeHorizontal">
-      <label for="heaterR">Heater R:</label>
-      <input id="heaterR" type="number" value={appState.heaterR} disabled />
-    </div>
-    <div class="gaugeHorizontal">
-      <label for="heaterDutyCycle">Duty Cycle:</label>
-      <input id="heaterDutyCycle" type="number" value={appState.heaterDutyCycle} disabled />
-    </div>
-  </fieldset>
+  <fieldset class="sectionContainer">
+    <legend>Lights and Fans</legend>
 
-  <Switch id="light" label="Light" />
-  <Switch id="heaterFanSet" label="Heater Fan" />
-  <Switch id="doorFanSet" label="Door Fan" />
-  <Switch id="auxFanSet" label="Aux Fan" />
+    <Switch id="light" label="Lights" />
+    <Switch id="heaterFanSet" label="Heater Fan" />
+    <Switch id="doorFanSet" label="Door Fan" />
+    <Switch id="auxFanSet" label="Aux Fan" />
+  </fieldset>
 </div>
 
 <style>
@@ -63,32 +68,40 @@
 
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.3rem;
 
-    text-align: center;
     background-color: var(--clr-bkg);
     border: 1px solid var(--clr-white);
     border-radius: 0.6rem;
   }
 
-  .gaugesContainer {
+  .sectionContainer {
     border: 1px solid var(--clr-white-dark);
     border-radius: 0.6rem;
     text-align: left;
+    padding: 0 0.4rem 0.3rem;
+  }
+
+  .sectionContainerVertical {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .sectionContainerHorizontal {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.8rem;
-    padding: 0 0.4rem 0.3rem;
   }
 
-  .gaugesContainer > legend {
+  .sectionContainer > legend {
     color: var(--clr-white-dark);
     font-size: 0.75rem;
     padding: 0 0.25rem;
   }
 
-  .gaugesContainer > input[type="button"] {
+  .setButton {
     color: var(--clr-white);
     background-color: var(--clr-green);
     width: 5rem;
@@ -101,11 +114,13 @@
     cursor: pointer;
   }
 
-  .gaugesContainer > input[type="button"]:active {
+  .setButton:active {
     background-color: #4caf50;
   }
 
   .gauge {
+    color: var(--clr-white-dark);
+    font-size: 0.6rem;
     text-align: center;
     padding: 0.25rem;
     border: 1px solid var(--clr-white-dark);
@@ -113,13 +128,10 @@
   }
 
   .gauge > legend {
-    font-size: 0.6rem;
-    color: var(--clr-white-dark);
     padding: 0 0.25rem;
   }
 
   .gauge input[type="number"] {
-    padding-left: 1rem;
     text-align: center;
     color: var(--clr-white);
     background-color: var(--clr-bkg);
@@ -130,12 +142,13 @@
 
   #heaterOnGauge {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: end;
     align-items: center;
+    gap: 0.3rem;
     border: none;
     width: 5.6rem;
     height: 2.6rem;
-    padding-bottom: 0.5rem;
   }
 
   .gaugeHorizontal {
@@ -149,10 +162,9 @@
 
   .gaugeHorizontal input[type="number"] {
     background-color: var(--clr-bkg);
-    color: var(--clr-white);
+    color: var(--clr-white-dark);
 
     border: none;
     width: 4rem;
-    font-size: 1rem;
   }
 </style>
