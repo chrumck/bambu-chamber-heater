@@ -39,12 +39,13 @@ body {
 
 #mainContainer h2 {
   margin: 0.5rem;
-  color: #b4b4b4;
+  color: #9b9b9b;
 }
 
 .switch {
-  --switch-width: 5rem;
+  --switch-width: 4rem;
   --switch-height: calc(var(--switch-width) / 2);
+  --switch-text-size: 0.75rem;
   --switch-clr: rgba(255, 255, 255, 0.4);
   --switch-clr-bg: var(--clr-bkg);
   --switch-clr-bg-on: rgb(0, 164, 0);
@@ -52,8 +53,8 @@ body {
   --switch-duration: 300ms;
 
   --toggle-size: calc(var(--switch-height) - var(--switch-inset) * 3);
-  --toggle-gap: calc(var(--toggle-size) * 1.5);
-  --toggle-padding-left: calc(var(--toggle-size) * 0.15);
+  --toggle-gap: calc(var(--toggle-size) * 1.4);
+  --toggle-padding-left: calc(var(--toggle-size) * 0.2);
   --toggle-bg: var(--switch-clr);
   --toggle-bg-on: var(--clr-white);
 
@@ -67,7 +68,7 @@ body {
 
   padding: 1rem 1.2rem 1rem 1rem;
   color: var(--clr-white);
-  font-size: 1.2rem;
+  font-size: 1rem;
 
   display: flex;
   flex-direction: row;
@@ -129,6 +130,7 @@ body {
 
 .switch input[type="checkbox"]::before,
 .switch input[type="checkbox"]::after {
+  font-size: var(--switch-text-size);
   position: relative;
 }
 
