@@ -8,9 +8,10 @@ export const defaultAppState: AppState = {
   connected: false,
 
   tempDegC: 0,
-  tempSetDegC: 32,
+  tempSetDegC: 0,
   heaterOnTimeLeftMins: 0,
   heaterR: 0,
+  heaterDutyCycle: 0,
 
   heaterOn: false,
   lightOn: false,
@@ -42,7 +43,8 @@ export enum WsMessageBytes {
   HeaterOnTimeLeftMins2 = 3,
   HeaterR1 = 4,
   HeaterR2 = 5,
-  Flags = 6,
+  HeaterDutyCycle = 6,
+  Flags = 7,
 }
 
 /**

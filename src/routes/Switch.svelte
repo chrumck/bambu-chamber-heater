@@ -1,21 +1,24 @@
 <script lang="ts">
+  import Led from "./Led.svelte";
   const { id, label } = $props();
+
+  let isOn = $state(false);
 </script>
 
 <div class="switch">
   <span class="label">{label}</span>
   <label for={id}>
-    <input type="checkbox" {id} />
+    <input type="checkbox" {id} bind:checked={isOn} />
   </label>
-  <span class="led"></span>
+  <Led on={isOn} />
 </div>
 
 <style>
   .switch {
-    --switch-width: 4rem;
+    --switch-width: 5rem;
     --switch-height: calc(var(--switch-width) / 2);
     --switch-text-size: 0.75rem;
-    --switch-clr: rgba(255, 255, 255, 0.4);
+    --switch-clr: var(--clr-white-dark);
     --switch-clr-bg: var(--clr-bkg);
     --switch-clr-bg-on: var(--clr-green);
     --switch-inset: 2px;
@@ -27,15 +30,7 @@
     --toggle-bg: var(--switch-clr);
     --toggle-bg-on: var(--clr-white);
 
-    --led-size: 0.75rem;
-    --led-color: var(--switch-clr-bg);
-    --led-color-on: rgb(50, 159, 255);
-    --led-duration: 100ms;
-    --led-blur: calc(var(--led-size) * 0.5);
-    --led-blur-distance: -0.5rem;
-    --led-blur-opacity: 0.3;
-
-    padding: 1rem 1.2rem 1rem 1rem;
+    padding: 0.8rem 1.2rem 0.8rem 1rem;
     color: var(--clr-white);
     font-size: 1rem;
 
@@ -111,30 +106,5 @@
   .switch input[type="checkbox"]::after {
     content: "OFF";
     color: var(--switch-clr);
-  }
-
-  .switch > .led {
-    position: relative;
-    width: var(--led-size);
-    height: var(--led-size);
-    border: 1px solid var(--switch-clr);
-    border-radius: 50%;
-    background-color: var(--led-color);
-    transition-property: background-color;
-    transition-duration: var(--led-duration);
-    transition-timing-function: ease-in-out;
-  }
-
-  .switch > .led:before {
-    content: "";
-    position: absolute;
-    inset: var(--led-blur-distance);
-    border-radius: inherit;
-    background-color: var(--led-color);
-    filter: blur(var(--led-blur));
-    opacity: var(--led-blur-opacity);
-    transition-property: background-color;
-    transition-duration: var(--led-duration);
-    transition-timing-function: ease-in-out;
   }
 </style>

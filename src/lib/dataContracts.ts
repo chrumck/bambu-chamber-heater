@@ -6,6 +6,7 @@ export interface AppState {
   tempSetDegC: number;
   heaterOnTimeLeftMins: number;
   heaterR: number;
+  heaterDutyCycle: number;
 
   heaterOn: boolean;
   lightOn: boolean;

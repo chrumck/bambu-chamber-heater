@@ -3,6 +3,7 @@
   import { connectWebSocket, defaultAppState, type AppState } from "$lib";
   import { onMount } from "svelte";
   import Switch from "./Switch.svelte";
+  import Led from "./Led.svelte";
   import MainHeader from "./MainHeader.svelte";
 
   const appState: AppState = $state(defaultAppState);
@@ -13,6 +14,43 @@
 
 <div id="mainContainer">
   <MainHeader />
+  <fieldset class="gaugesContainer">
+    <legend>Chamber Temp °C</legend>
+    <fieldset class="gauge">
+      <legend>Current</legend>
+      <input type="number" value={appState.tempDegC} disabled />
+    </fieldset>
+    <fieldset class="gauge">
+      <legend>Target</legend>
+      <input type="number" value={appState.tempSetDegC} disabled />
+    </fieldset>
+    <input type="button" value="SET" />
+  </fieldset>
+  <fieldset class="gaugesContainer">
+    <legend>Heater</legend>
+    <fieldset class="gauge" id="heaterOnGauge">
+      <legend>Heater On</legend>
+      <Led on={appState.heaterOn} />
+    </fieldset>
+    <fieldset class="gauge">
+      <legend>Time Left Mins</legend>
+      <input type="number" value={appState.heaterOnTimeLeftMins} disabled />
+    </fieldset>
+    <input type="button" value="SET" />
+  </fieldset>
+
+  <fieldset class="gaugesContainer">
+    <legend>Heater Data</legend>
+    <div class="gaugeHorizontal">
+      <label for="heaterR">Heater R:</label>
+      <input id="heaterR" type="number" value={appState.heaterR} disabled />
+    </div>
+    <div class="gaugeHorizontal">
+      <label for="heaterDutyCycle">Duty Cycle:</label>
+      <input id="heaterDutyCycle" type="number" value={appState.heaterDutyCycle} disabled />
+    </div>
+  </fieldset>
+
   <Switch id="light" label="Light" />
   <Switch id="heaterFanSet" label="Heater Fan" />
   <Switch id="doorFanSet" label="Door Fan" />
@@ -29,9 +67,92 @@
 
     text-align: center;
     background-color: var(--clr-bkg);
+    border: 1px solid var(--clr-white);
     border-radius: 0.6rem;
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--clr-white);
+  }
+
+  .gaugesContainer {
+    border: 1px solid var(--clr-white-dark);
+    border-radius: 0.6rem;
+    text-align: left;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0 0.4rem 0.3rem;
+  }
+
+  .gaugesContainer > legend {
+    color: var(--clr-white-dark);
+    font-size: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
+  .gaugesContainer > input[type="button"] {
+    color: var(--clr-white);
+    background-color: var(--clr-green);
+    width: 5rem;
+    height: 2.3rem;
+    font-size: 0.8rem;
+    padding: 0.5rem;
+    margin-top: 0.2rem;
+    border: 1px solid var(--clr-white-dark);
+    border-radius: 0.5rem;
+    cursor: pointer;
+  }
+
+  .gaugesContainer > input[type="button"]:active {
+    background-color: #4caf50;
+  }
+
+  .gauge {
+    text-align: center;
+    padding: 0.25rem;
+    border: 1px solid var(--clr-white-dark);
+    border-radius: 0.5rem;
+  }
+
+  .gauge > legend {
+    font-size: 0.6rem;
+    color: var(--clr-white-dark);
+    padding: 0 0.25rem;
+  }
+
+  .gauge input[type="number"] {
+    padding-left: 1rem;
+    text-align: center;
+    color: var(--clr-white);
+    background-color: var(--clr-bkg);
+    border: none;
+    width: 5rem;
+    font-size: 1.2rem;
+  }
+
+  #heaterOnGauge {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    width: 5.6rem;
+    height: 2.6rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .gaugeHorizontal {
+    font-size: 0.75rem;
+  }
+
+  .gaugeHorizontal label {
+    color: var(--clr-white-dark);
+    margin-right: 0.5rem;
+  }
+
+  .gaugeHorizontal input[type="number"] {
+    background-color: var(--clr-bkg);
+    color: var(--clr-white);
+
+    border: none;
+    width: 4rem;
+    font-size: 1rem;
   }
 </style>
