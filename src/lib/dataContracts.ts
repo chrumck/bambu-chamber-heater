@@ -4,7 +4,7 @@ export interface AppState {
 
   tempDegC: number;
   tempSetDegC: number;
-  heaterOnTimeLeftMins: number;
+  heaterTimeLeftMins: number;
   heaterR: number;
   heaterDutyCycle: number;
 

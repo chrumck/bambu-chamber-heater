@@ -1,7 +1,7 @@
 import { page } from "$app/state";
 
 export const getManifest = (iconSrc: string) => ({
-  name: "KnurToryTroller",
+  name: "KnurTory Troller",
   short_name: "KNTTRL",
   icons: [
     {
@@ -10,7 +10,7 @@ export const getManifest = (iconSrc: string) => ({
       type: "image/webp",
     },
   ],
-  description: "The only true Troller for KnurTory",
+  description: "The only true Troller for KnurTory!",
   start_url: page.url.href,
   display: "standalone",
   theme_color: "#262626",

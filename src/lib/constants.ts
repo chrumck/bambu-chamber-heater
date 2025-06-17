@@ -9,7 +9,7 @@ export const defaultAppState: AppState = {
 
   tempDegC: 0,
   tempSetDegC: 0,
-  heaterOnTimeLeftMins: 0,
+  heaterTimeLeftMins: 0,
   heaterR: 0,
   heaterDutyCycle: 0,
 
