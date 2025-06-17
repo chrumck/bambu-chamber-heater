@@ -10,21 +10,23 @@
   import Popup from "./Popup.svelte";
 
   const appState: AppState = $state(defaultAppState);
+  const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
+  let webSocket: ReturnType<typeof connectWebSocket> | null = null;
 
   const closePopup = () => history.back();
-
   const openTempPopup = () => pushState("", { ...page.state, showTempPopup: true });
   const setChamberTemp = (newTemp: number) => {
     appState.tempSetDegC = newTemp;
   };
-
   const openHeaterPopup = () => pushState("", { ...page.state, showHeaterPopup: true });
   const setHeaterTime = (newTime: number) => {
     appState.heaterTimeLeftMins = newTime;
   };
 
-  const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
-  onMount(() => connectWebSocket(appState, webSocketUrl));
+  onMount(() => {
+    webSocket = connectWebSocket(appState, webSocketUrl);
+    return webSocket.close;
+  });
 </script>
 
 <div id="mainContainer">

@@ -4,14 +4,17 @@ import { wsDeadMs, wsKeepAliveIntervalMs } from "./constants";
 let webSocket: WebSocket | null = null;
 let wsKeepAliveId: number | null = null;
 
-export const connectWebSocket = (appState: AppState, webSocketUrl: string): (() => void) => {
+export const connectWebSocket = (
+  appState: AppState,
+  webSocketUrl: string,
+): { send: (request: Uint8Array) => void; close: () => void } => {
   webSocket = new WebSocket(webSocketUrl);
   webSocket.onclose = handleWsClose(appState);
   webSocket.onopen = handleWsOpen(appState, webSocketUrl);
   webSocket.onmessage = handleWsMessage(appState);
   webSocket.onerror = handleWsError(appState);
 
-  return () => webSocket?.close();
+  return { close: () => webSocket?.close(), send: (request: Uint8Array) => webSocket?.send(request) };
 };
 
 const handleWsClose: (appState: AppState) => WebSocket["onclose"] = (appState) => () => {
