@@ -6,6 +6,7 @@
   import Gauge from "./Gauge.svelte";
   import Led from "./Led.svelte";
   import Switch from "./Switch.svelte";
+  import Popup from "./Popup.svelte";
 
   const appState: AppState = $state(defaultAppState);
   const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
@@ -47,6 +48,7 @@
     <Switch id="doorFanSet" label="Door Fan" />
     <Switch id="auxFanSet" label="Aux Fan" />
   </fieldset>
+  <Popup label="Set Temp °C" min={0} max={100} step={0.1} />
 </div>
 
 <style>
