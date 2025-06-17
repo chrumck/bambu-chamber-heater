@@ -11,8 +11,12 @@
 
   const appState: AppState = $state(defaultAppState);
 
+  const closePopup = () => history.back();
+
   const openTempPopup = () => pushState("", { ...page.state, showTempPopup: true });
-  const closeTempPopup = () => pushState("", { ...page.state, showTempPopup: false });
+  const setChamberTemp = (newTemp: number) => {
+    appState.tempSetDegC = newTemp;
+  };
 
   const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
   onMount(() => connectWebSocket(appState, webSocketUrl));
@@ -58,9 +62,9 @@
     min={0}
     max={100}
     step={1}
-    value={appState.tempSetDegC}
-    submit={() => console.log("submit!")}
-    close={closeTempPopup}
+    startValue={appState.tempSetDegC}
+    submit={setChamberTemp}
+    close={closePopup}
   />
 </div>
 

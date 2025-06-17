@@ -1,24 +1,26 @@
 <script lang="ts">
-  import type { EventHandler, KeyboardEventHandler } from "svelte/elements";
+  import type { KeyboardEventHandler } from "svelte/elements";
+
   interface PopupProps {
     isOpen: boolean;
     label: string;
     min: number;
     max: number;
     step: number;
-    value: number;
-    submit: EventHandler<SubmitEvent>;
+    startValue: number | null;
+    submit: (newValue: number) => void;
     close: () => void;
   }
 
+  const { isOpen, label, min, max, step, startValue, submit, close }: PopupProps = $props();
+
+  let value = $state(startValue);
   let popupElement = $state();
 
-  const { isOpen, label, min, max, step, value, submit, close }: PopupProps = $props();
-
-  const handleEscape: KeyboardEventHandler<any> = ({ key }) => key === "Escape" && close();
+  $effect(() => void (isOpen && (value = startValue)));
 </script>
 
-<svelte:window on:keyup={handleEscape} />
+<svelte:window on:keyup={({ key }) => key === "Escape" && close()} />
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div
@@ -28,10 +30,18 @@
 >
   <div id="popupContent">
     <h4>{label}</h4>
-    <form class="formContent" onsubmit={(event) => (event.preventDefault(), submit(event), close())}>
+    <form
+      class="formContent"
+      onsubmit={(event) => {
+        event.preventDefault();
+        if (value === null || isNaN(value)) return;
+        submit(value);
+        close();
+      }}
+    >
       <input class="button" id="btnCancel" type="button" value="CANCEL" onclick={close} />
-      <input type="number" {min} {max} {step} {value} />
-      <input class="button" type="submit" value="OK" />
+      <input type="number" {min} {max} {step} bind:value />
+      <input class="button" type="submit" value="OK" disabled={value === null || isNaN(value)} />
     </form>
   </div>
 </div>
@@ -110,6 +120,7 @@
   .formContent input.button {
     width: 5rem;
     font-size: 0.75rem;
+    cursor: pointer;
   }
 
   .formContent input[type="number"] {
@@ -120,6 +131,12 @@
   .formContent input[type="submit"] {
     color: var(--clr-white);
     background-color: var(--clr-green);
+    font-size: 1rem;
+  }
+
+  .formContent input[type="submit"]:disabled {
+    color: var(--clr-white-dark);
+    background-color: var(--clr-bkg);
     font-size: 1rem;
   }
 
