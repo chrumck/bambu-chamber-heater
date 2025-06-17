@@ -1,7 +1,8 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { pushState } from "$app/navigation";
   import { page } from "$app/state";
   import { connectWebSocket, defaultAppState, type AppState } from "$lib";
-  import { onMount } from "svelte";
   import MainHeader from "./MainHeader.svelte";
   import Gauge from "./Gauge.svelte";
   import Led from "./Led.svelte";
@@ -9,8 +10,11 @@
   import Popup from "./Popup.svelte";
 
   const appState: AppState = $state(defaultAppState);
-  const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
 
+  const openTempPopup = () => pushState("", { ...page.state, showTempPopup: true });
+  const closeTempPopup = () => pushState("", { ...page.state, showTempPopup: false });
+
+  const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
   onMount(() => connectWebSocket(appState, webSocketUrl));
 </script>
 
@@ -21,7 +25,7 @@
     <legend>Chamber Temp °C</legend>
     <Gauge label="Current" value={appState.tempDegC} />
     <Gauge label="Target" value={appState.tempSetDegC} />
-    <input class="setButton" type="button" value="SET" />
+    <input class="setButton" type="button" value="SET" onclick={openTempPopup} />
   </fieldset>
 
   <fieldset class="sectionContainer flexColumn">
@@ -48,7 +52,16 @@
     <Switch id="doorFanSet" label="Door Fan" />
     <Switch id="auxFanSet" label="Aux Fan" />
   </fieldset>
-  <Popup label="Set Temp °C" min={0} max={100} step={0.1} />
+  <Popup
+    isOpen={page.state.showTempPopup}
+    label="Set Temp °C"
+    min={0}
+    max={100}
+    step={1}
+    value={appState.tempSetDegC}
+    submit={() => console.log("submit!")}
+    close={closeTempPopup}
+  />
 </div>
 
 <style>
