@@ -9,7 +9,7 @@ export interface AppState {
   heaterDutyCycle: number;
 
   heaterOn: boolean;
-  lightOn: boolean;
+  lightSet: boolean;
   heaterFanSet: boolean;
   heaterFanOn: boolean;
   doorVentFanSet: boolean;

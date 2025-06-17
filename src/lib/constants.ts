@@ -14,7 +14,7 @@ export const defaultAppState: AppState = {
   heaterDutyCycle: 0,
 
   heaterOn: false,
-  lightOn: false,
+  lightSet: false,
   heaterFanSet: false,
   heaterFanOn: false,
   doorVentFanSet: false,
@@ -64,4 +64,16 @@ export const enum WsMessageFlags {
   DoorVentFanOn = 5,
   AuxFanSet = 6,
   AuxFanOn = 7,
+}
+
+/**
+ * The web socket request codes.
+ */
+export const enum WsRequestCode {
+  SetTemp = 0xa1,
+  SetHeaterTimeLeft = 0xa2,
+  SetLight = 0xa3,
+  SetHeaterFan = 0xa4,
+  SetDoorVentFan = 0xa5,
+  SetAuxFan = 0xa6,
 }
