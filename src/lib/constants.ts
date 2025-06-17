@@ -37,14 +37,15 @@ export const wsDeadMs = wsKeepAliveIntervalMs * 3;
  * The web socket message structure.
  */
 export enum WsMessageBytes {
-  TempDegC = 0,
-  TempSetDegC = 1,
-  HeaterOnTimeLeftMins1 = 2,
-  HeaterOnTimeLeftMins2 = 3,
-  HeaterR1 = 4,
-  HeaterR2 = 5,
-  HeaterDutyCycle = 6,
-  Flags = 7,
+  TempDegC1 = 0,
+  TempDegC2 = 1,
+  TempSetDegC = 2,
+  HeaterOnTimeLeftMins1 = 3,
+  HeaterOnTimeLeftMins2 = 4,
+  HeaterR1 = 5,
+  HeaterR2 = 6,
+  HeaterDutyCycle = 7,
+  Flags = 8,
 }
 
 /**

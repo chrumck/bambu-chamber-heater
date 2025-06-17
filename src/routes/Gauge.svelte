@@ -1,11 +1,18 @@
 <script lang="ts">
-  const { horizontal = false, label, value } = $props();
+  interface Props {
+    horizontal?: boolean;
+    label: string;
+    value: number;
+    precision?: number;
+  }
+
+  const { horizontal, label, value, precision = 0 }: Props = $props();
 </script>
 
 {#if !horizontal}
   <fieldset class="gauge">
     <legend>{label}</legend>
-    <input type="number" {value} disabled />
+    <input type="number" value={value.toFixed(precision)} disabled />
   </fieldset>
 {:else}
   <div class="gaugeHorizontal">

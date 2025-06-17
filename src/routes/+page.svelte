@@ -18,6 +18,11 @@
     appState.tempSetDegC = newTemp;
   };
 
+  const openHeaterPopup = () => pushState("", { ...page.state, showHeaterPopup: true });
+  const setHeaterTime = (newTime: number) => {
+    appState.heaterTimeLeftMins = newTime;
+  };
+
   const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
   onMount(() => connectWebSocket(appState, webSocketUrl));
 </script>
@@ -27,7 +32,7 @@
 
   <fieldset class="sectionContainer flexRow">
     <legend>Chamber Temp °C</legend>
-    <Gauge label="Current" value={appState.tempDegC} />
+    <Gauge label="Current" value={appState.tempDegC} precision={1} />
     <Gauge label="Target" value={appState.tempSetDegC} />
     <input class="setButton" type="button" value="SET" onclick={openTempPopup} />
   </fieldset>
@@ -40,7 +45,7 @@
         <span>Heater On</span>
       </div>
       <Gauge label="Time Left Mins" value={appState.heaterTimeLeftMins} />
-      <input class="setButton" type="button" value="SET" />
+      <input class="setButton" type="button" value="SET" onclick={openHeaterPopup} />
     </div>
     <div class="flexRow">
       <Gauge horizontal label="Heater R" value={appState.heaterR} />
@@ -64,6 +69,16 @@
     step={1}
     startValue={appState.tempSetDegC}
     submit={setChamberTemp}
+    close={closePopup}
+  />
+  <Popup
+    isOpen={page.state.showHeaterPopup}
+    label="Set Heater Time"
+    min={0}
+    max={48 * 60}
+    step={1}
+    startValue={appState.heaterTimeLeftMins}
+    submit={setHeaterTime}
     close={closePopup}
   />
 </div>
