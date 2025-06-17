@@ -29,7 +29,8 @@
   }
 
   .gauge input[type="number"] {
-    text-align: center;
+    text-align: right;
+    padding-right: 0.25rem;
     color: var(--clr-white);
     background-color: var(--clr-bkg);
     border: none;
