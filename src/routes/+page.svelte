@@ -8,6 +8,7 @@
   import Led from "./Led.svelte";
   import Switch from "./Switch.svelte";
   import Popup from "./Popup.svelte";
+  import Connecting from "./Connecting.svelte";
 
   const appState: AppState = $state(defaultAppState);
   const webSocketUrl = `ws://${page.url.host.replace(/\/+$/, "")}/ws`;
@@ -83,6 +84,7 @@
     submit={setHeaterTime}
     close={closePopup}
   />
+  <Connecting isOpen={!appState.connected} />
 </div>
 
 <style>

@@ -61,8 +61,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-
     background-color: rgba(161, 161, 161, 0.5);
+
     opacity: 0;
     visibility: hidden;
     transition:
