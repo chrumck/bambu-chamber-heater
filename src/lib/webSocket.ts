@@ -30,19 +30,25 @@ const handleWsOpen: (appState: AppState, webSocketUrl: string) => WebSocket["ono
     appState.connected = true;
 
     wsKeepAliveId = setInterval(() => {
+      const currentTimeStamp = new Date().getTime();
+
       appState.connected =
         webSocket?.readyState === WebSocket.OPEN &&
-        new Date().getTime() - wsKeepAliveIntervalMs < appState.lastDataTimeStampMs;
+        currentTimeStamp - wsKeepAliveIntervalMs < appState.lastDataTimeStampMs;
 
-      if (
-        webSocket?.readyState !== WebSocket.CLOSED &&
-        new Date().getTime() - appState.lastDataTimeStampMs < wsDeadMs
-      ) {
+      if (appState.connected) return;
+
+      if (webSocket?.readyState !== WebSocket.CLOSED && currentTimeStamp - appState.lastDataTimeStampMs < wsDeadMs) {
         return;
       }
 
-      webSocket?.close();
+      try {
+        webSocket?.close();
+      } catch (closingError) {
+        console.error("Error closing socket", closingError);
+      }
       webSocket = null;
+
       setTimeout(() => connectWebSocket(appState, webSocketUrl), 100);
     }, wsKeepAliveIntervalMs);
   };
