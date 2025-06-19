@@ -3,6 +3,11 @@
 
 #define SERIAL_BAUD_RATE 115200
 #define SERIAL_BUFFER_SIZE 256
+
+#define PREFS_NAMESPACE "KnurToryTroller"
+#define PREFS_KEY_WIFI_SSID "wifiSsid"
+#define PREFS_KEY_WIFI_PASS "wifiPass"
+
 #define LOOP_INTERVAL_MS 2500
 #define MAX_HEATER_TIME_MS 3600e3
 
@@ -38,7 +43,7 @@
         lastTimeOff = currentTime;\
     }\
 
-Preferences preferences;
+Preferences prefs;
 
 u32_t maxHeaterTimeMs = MAX_HEATER_TIME_MS;
 float chamberTempOff = DEFAULT_CHAMBER_TEMP_OFF;
@@ -53,6 +58,12 @@ DHTNEW dht(DHT_PIN);
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
+    Serial.setRxBufferSize(SERIAL_BUFFER_SIZE);
+
+    prefs.begin(PREFS_NAMESPACE, false);
+    String wifiSsid = prefs.getString(PREFS_KEY_WIFI_SSID);
+    String wifiPass = prefs.getString(PREFS_KEY_WIFI_PASS);
+    prefs.end();
 
     pinMode(HEATER_RELAY_PIN, OUTPUT);
     digitalWrite(HEATER_RELAY_PIN, HIGH);
@@ -171,46 +182,43 @@ void loop() {
 void receiveSerial() {
     static const char endMarker = '\n';
     static char serialBuf[SERIAL_BUFFER_SIZE];
-    static byte ndx;
-    static char rc;
+    static uint16_t idx;
+    static char currentChar;
 
     if (Serial.available() == 0) return;
 
-    ndx = 0;
+    idx = 0;
     memset(&serialBuf, 0, SERIAL_BUFFER_SIZE);
-    while (Serial.available() > 0 && ndx < SERIAL_BUFFER_SIZE) {
-        rc = Serial.read();
-        if (rc == endMarker) break;
-        serialBuf[ndx++] = rc;
+    while (Serial.available() > 0 && idx < SERIAL_BUFFER_SIZE) {
+        currentChar = Serial.read();
+        if (currentChar == endMarker) break;
+        serialBuf[idx++] = currentChar;
     }
 
     String message = String(serialBuf);
 
-    if (message.length() != 4 && message.length() < 6) {
-        Serial.println("Invalid request");
+    if (message.startsWith("ssid ")) {
+        savePrefs(PREFS_KEY_WIFI_SSID, message.substring(5));
         return;
     }
 
-    if (message.equals("time")) {
-        Serial.print("heater time left in minutes: ");
-        Serial.println((int)((maxHeaterTimeMs - millis()) / 60e3));
+    if (message.startsWith("pass ")) {
+        savePrefs(PREFS_KEY_WIFI_PASS, message.substring(5));
+        return;
     }
 
-    if (message.startsWith("time ")) {
-        u32_t requestedTimeMs = (u32_t)message.substring(5).toInt() * 60e3;
-        maxHeaterTimeMs = requestedTimeMs + millis();
-        Serial.print("new max heater time in minutes: ");
-        Serial.println((int)(requestedTimeMs / 60e3));
-    }
+    Serial.println("Command not recognized");
+}
 
-    if (message.equals("temp")) {
-        Serial.print("chamber temp set: ");
-        Serial.println(chamberTempOff);
-    }
+void savePrefs(char* prefsKey, String prefsValue) {
+    prefs.begin(PREFS_NAMESPACE, false);
+    prefs.putString(prefsKey, prefsValue);
+    prefs.end();
 
-    if (message.startsWith("temp ")) {
-        chamberTempOff = message.substring(5).toInt();
-        Serial.print("new chamber max temp:");
-        Serial.println(chamberTempOff);
-    }
+    Serial.print("Saved key: ");
+    Serial.print(prefsKey);
+    Serial.print(" ,value: ");
+    Serial.println(prefsValue.c_str());
+    Serial.println("Please reboot the device to apply changes");
+    Serial.println("You need to reboot for changes to take effect");
 }
