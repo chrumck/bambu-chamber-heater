@@ -1,17 +1,19 @@
+#include <Preferences.h>
 #include <dhtnew.h>
 
 #define SERIAL_BAUD_RATE 115200
+#define SERIAL_BUFFER_SIZE 256
 #define LOOP_INTERVAL_MS 2500
 #define MAX_HEATER_TIME_MS 3600e3
 
-#define DHT_PIN 10
+#define DHT_PIN 34
 #define DHT_MAX_FAIL_COUNT 5
 
 #define ANALOG_READ_CONVERSION_FACTOR 0.0048828125
 
 #define ANALOG_READ_COUNT 100
-#define REF_VOLTAGE_PIN D
-#define HEATER_TEMP_PIN A0
+#define REF_VOLTAGE_PIN 23
+#define HEATER_TEMP_PIN 35
 #define HEATER_TEMP_REF_R 4700
 #define HEATER_TEMP_REF_V_MIN 4.8
 #define HEATER_TEMP_REF_V_MAX 5.2
@@ -28,13 +30,15 @@
 #define DEFAULT_CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
 
-#define HEATER_RELAY_PIN 21
+#define HEATER_RELAY_PIN 32
 
 #define switchHeaterOff()\
     if (isHeaterOn) {\
         digitalWrite(HEATER_RELAY_PIN, HIGH);\
         lastTimeOff = currentTime;\
     }\
+
+Preferences preferences;
 
 u32_t maxHeaterTimeMs = MAX_HEATER_TIME_MS;
 float chamberTempOff = DEFAULT_CHAMBER_TEMP_OFF;
@@ -193,7 +197,7 @@ void receiveSerial() {
     }
 
     if (message.startsWith("time ")) {
-        u32_t requestedTimeMs = (u32)message.substring(5).toInt() * 60e3;
+        u32_t requestedTimeMs = (u32_t)message.substring(5).toInt() * 60e3;
         maxHeaterTimeMs = requestedTimeMs + millis();
         Serial.print("new max heater time in minutes: ");
         Serial.println((int)(requestedTimeMs / 60e3));

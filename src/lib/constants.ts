@@ -26,7 +26,7 @@ export const defaultAppState: AppState = {
 /**
  * The web socket keepalive routine interval in milliseconds.
  */
-export const wsKeepAliveIntervalMs = 3000;
+export const wsKeepAliveIntervalMs = 3500;
 
 /**
  * The web socket timeout in milliseconds after which the connection is considered dead and needs to be re-established.
