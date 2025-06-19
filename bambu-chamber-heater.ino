@@ -1,3 +1,7 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <Preferences.h>
 #include <dhtnew.h>
 
@@ -11,14 +15,17 @@
 #define LOOP_INTERVAL_MS 2500
 #define MAX_HEATER_TIME_MS 3600e3
 
-#define DHT_PIN 34
+#define REF_VOLTAGE_PIN 23
+#define DHT_PIN 32
+#define HEATER_RELAY_PIN 33
+#define HEATER_TEMP_PIN 34
+
 #define DHT_MAX_FAIL_COUNT 5
 
 #define ANALOG_READ_CONVERSION_FACTOR 0.0048828125
 
 #define ANALOG_READ_COUNT 100
-#define REF_VOLTAGE_PIN 23
-#define HEATER_TEMP_PIN 35
+
 #define HEATER_TEMP_REF_R 4700
 #define HEATER_TEMP_REF_V_MIN 4.8
 #define HEATER_TEMP_REF_V_MAX 5.2
@@ -35,7 +42,6 @@
 #define DEFAULT_CHAMBER_TEMP_OFF 60.0
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
 
-#define HEATER_RELAY_PIN 32
 
 #define switchHeaterOff()\
     if (isHeaterOn) {\
@@ -45,10 +51,13 @@
 
 Preferences prefs;
 
+AsyncWebServer server(80);
+AsyncWebSocket ws("/ws");
+
 u32_t maxHeaterTimeMs = MAX_HEATER_TIME_MS;
 float chamberTempOff = DEFAULT_CHAMBER_TEMP_OFF;
 u32_t lastCycleTime = millis();
-int dhtReadFailCount = 0;
+int dhtReadFailCount = DHT_MAX_FAIL_COUNT;
 float chamberTempDegC = 0.0;
 
 u32_t lastTimeOn = 0;
@@ -61,9 +70,16 @@ void setup() {
     Serial.setRxBufferSize(SERIAL_BUFFER_SIZE);
 
     prefs.begin(PREFS_NAMESPACE, false);
-    String wifiSsid = prefs.getString(PREFS_KEY_WIFI_SSID);
-    String wifiPass = prefs.getString(PREFS_KEY_WIFI_PASS);
+    String ssid = prefs.getString(PREFS_KEY_WIFI_SSID);
+    String pass = prefs.getString(PREFS_KEY_WIFI_PASS);
     prefs.end();
+
+    if (ssid.isEmpty() || pass.isEmpty()) {
+        Serial.println("Wifi credentials not available, skipping setting up web server");
+    }
+    else {
+        initWifi(ssid, pass);
+    }
 
     pinMode(HEATER_RELAY_PIN, OUTPUT);
     digitalWrite(HEATER_RELAY_PIN, HIGH);
@@ -89,7 +105,7 @@ void loop() {
         dhtReadFailCount++;
 
         if (dhtReadFailCount >= DHT_MAX_FAIL_COUNT) {
-            Serial.println("Too many failed chamber temp reads");
+            Serial.println("; Too many failed chamber temp reads");
             switchHeaterOff();
             return;
         }
@@ -177,6 +193,17 @@ void loop() {
         digitalWrite(HEATER_RELAY_PIN, LOW);
         lastTimeOn = currentTime;
     }
+}
+
+void initWifi(String ssid, String pass) {
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, pass);
+    Serial.print("Connecting to WiFi ..");
+    while (WiFi.status() != WL_CONNECTED) {
+        Serial.print('.');
+        delay(1000);
+    }
+    Serial.println(WiFi.localIP());
 }
 
 void receiveSerial() {
