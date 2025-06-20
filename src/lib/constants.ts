@@ -17,8 +17,8 @@ export const defaultAppState: AppState = {
   lightSet: false,
   heaterFanSet: false,
   heaterFanOn: false,
-  doorVentFanSet: false,
-  doorVentFanOn: false,
+  doorFanSet: false,
+  doorFanOn: false,
   auxFanSet: false,
   auxFanOn: false,
 };

@@ -12,8 +12,8 @@ export interface AppState {
   lightSet: boolean;
   heaterFanSet: boolean;
   heaterFanOn: boolean;
-  doorVentFanSet: boolean;
-  doorVentFanOn: boolean;
+  doorFanSet: boolean;
+  doorFanOn: boolean;
   auxFanSet: boolean;
   auxFanOn: boolean;
 }
