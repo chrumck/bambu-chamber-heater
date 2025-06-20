@@ -20,7 +20,7 @@
 #define AUX_FAN_PIN 12
 #define DOOR_FAN_PIN 14
 #define HEATER_FAN_PIN 27
-#define HEATER_RELAY_PIN 33
+#define HEATER_PIN 33
 
 #define HEATER_TEMP_PIN 36
 #define DHT_PIN 23
@@ -33,21 +33,25 @@
 
 #define ANALOG_READ_COUNT 100
 
-#define HEATER_TEMP_REF_R 4700
-#define HEATER_TEMP_REF_V_MIN 4.8
-#define HEATER_TEMP_REF_V_MAX 5.2
+#define HEATER_REF_R 4700
+#define HEATER_REF_V_MIN 4.8
+#define HEATER_REF_V_MAX 5.2
 
-#define HEATER_TEMP_R_MAX 200000
-#define HEATER_TEMP_R_MIN 120
-// #define HEATER_TEMP_R_ON 7784 // 95 degC
-// #define HEATER_TEMP_R_ON 5070 // 110 degC
-#define HEATER_TEMP_R_ON 4410  // 115 degC
-// #define HEATER_TEMP_R_OFF 5070 // 110 degC
-// #define HEATER_TEMP_R_OFF 3850 // 120 degC
-#define HEATER_TEMP_R_OFF 3340  // 125 degC
+#define HEATER_R_MAX 200000
+#define HEATER_R_MIN 120
+#define HEATER_R_FAN_ON 35899 // 50 degC
+#define HEATER_R_DEADBAND 1000
+
+// #define HEATER_R_ON 7784 // 95 degC
+// #define HEATER_R_ON 5070 // 110 degC
+#define HEATER_R_ON 4410  // 115 degC
+// #define HEATER_R_OFF 5070 // 110 degC
+// #define HEATER_R_OFF 3850 // 120 degC
+#define HEATER_R_OFF 3340  // 125 degC
 
 #define DEFAULT_TEMP_SET 30
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
+#define AUX_FAN_ON_TEMP 1.0
 
 Preferences prefs;
 
@@ -65,8 +69,6 @@ float heaterR = 0;
 
 // All times are in milliseconds from last boot if otherwise not specified
 u32_t heaterOnMaxTime = 0;
-u32_t heaterLastTimeOn = 0;
-u32_t heaterLastTimeOff = 0;
 float heaterLastDutyCycle = 0.0;
 
 bool heaterFanSet = false;
@@ -103,8 +105,8 @@ void setup() {
     digitalWrite(DOOR_FAN_PIN, HIGH);
     pinMode(HEATER_FAN_PIN, OUTPUT);
     digitalWrite(HEATER_FAN_PIN, HIGH);
-    pinMode(HEATER_RELAY_PIN, OUTPUT);
-    digitalWrite(HEATER_RELAY_PIN, HIGH);
+    pinMode(HEATER_PIN, OUTPUT);
+    digitalWrite(HEATER_PIN, HIGH);
 
     dht.reset();
 }
@@ -120,69 +122,13 @@ void loop() {
     wsNewRequest = false;
     lastCycleTime = currentTime;
 
-    int chamberTempReadResult = dht.read();
-    if (chamberTempReadResult != DHTLIB_OK) {
-        Serial.print("Failed chamber temp read, result: ");
-        Serial.println(chamberTempReadResult);
+    readChamberTemp();
+    readHeaterR();
 
-        dhtFailCount++;
-
-        if (dhtFailCount >= DHT_MAX_FAIL_COUNT) {
-            Serial.println("Too many failed chamber temp reads, switching heater OFF");
-            tempDegC = TEMP_ERROR_VALUE;
-            switchHeater(false);
-        }
-    }
-    else {
-        dhtFailCount = 0;
-        tempDegC = dht.getTemperature();
-    }
-
-    vRef = 0;
-    heaterR = 0;
-    for (int i = 0; i < ANALOG_READ_COUNT; i++) {
-        float currentVRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
-        if (currentVRef < HEATER_TEMP_REF_V_MIN || currentVRef > HEATER_TEMP_REF_V_MAX) {
-            Serial.print("Reference voltage out of bounds, switching heater OFF: ");
-            Serial.println(currentVRef);
-            vRef = 0;
-            heaterR = 0;
-            switchHeater(false);
-            break;
-        }
-
-        vRef += currentVRef;
-
-        float heaterRVolt = (analogRead(HEATER_TEMP_PIN) * ANALOG_READ_CONVERSION_FACTOR);
-        heaterR += heaterRVolt * HEATER_TEMP_REF_R / (currentVRef - heaterRVolt);
-    }
-
-    vRef /= ANALOG_READ_COUNT;
-    heaterR /= ANALOG_READ_COUNT;
-
-    if (heaterR != 0 && (heaterR > HEATER_TEMP_R_MAX || heaterR < HEATER_TEMP_R_MIN)) {
-        Serial.print("Heater temperature resistance out of bounds, swithing heater OFF: ");
-        Serial.println(heaterR);
-        heaterR = 0;
-        switchHeater(false);
-    }
-
-    bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
-    if (isHeaterOn && (heaterR < HEATER_TEMP_R_OFF || tempDegC > tempSetDegC)) switchHeater(false);
-
-    u32_t timeLeftToRunMs = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
-
-    if (timeLeftToRunMs == 0 && isHeaterOn) {
-        Serial.println("Max heater time reached, stopping heater");
-        switchHeater(false);
-    }
-
-    if (timeLeftToRunMs > 0 &&
-        !isHeaterOn &&
-        heaterR > HEATER_TEMP_R_ON &&
-        tempDegC < (tempSetDegC - CHAMBER_TEMP_ON_DEADBAND)) {
-        switchHeater(true);
-    }
+    controlHeater();
+    controlHeaterFan();
+    controlAuxFan();
+    controlDoorFan();
 
     ws.cleanupClients();
 }
@@ -239,21 +185,176 @@ void savePrefs(char* prefsKey, String prefsValue) {
     Serial.println("You need to reboot for changes to take effect");
 }
 
-void switchHeater(bool on) {
-    bool isHeaterOn = digitalRead(HEATER_RELAY_PIN) == LOW;
-    if (isHeaterOn == on) { return; }
+void readChamberTemp() {
+    int chamberTempReadResult = dht.read();
 
-    uint32_t currentTime = millis();
+    if (chamberTempReadResult == DHTLIB_OK) {
+        dhtFailCount = 0;
+        tempDegC = dht.getTemperature();
+        return;
+    }
+
+    Serial.print("Failed chamber temp read, result: ");
+    Serial.println(chamberTempReadResult);
+
+    dhtFailCount++;
+
+    if (dhtFailCount >= DHT_MAX_FAIL_COUNT) {
+        Serial.println("Too many failed chamber temp reads");
+        tempDegC = TEMP_ERROR_VALUE;
+        setHeater(false);
+    }
+}
+
+void readHeaterR() {
+    vRef = 0;
+    heaterR = 0;
+
+    for (int i = 0; i < ANALOG_READ_COUNT; i++) {
+        float currentVRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
+        if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
+            Serial.print("Reference voltage out of bounds: ");
+            Serial.println(currentVRef);
+            vRef = 0;
+            heaterR = 0;
+            setHeater(false);
+            return;
+        }
+
+        vRef += currentVRef;
+
+        float heaterV = (analogRead(HEATER_TEMP_PIN) * ANALOG_READ_CONVERSION_FACTOR);
+        heaterR += heaterV * HEATER_REF_R / (currentVRef - heaterV);
+    }
+
+    vRef /= ANALOG_READ_COUNT;
+    heaterR /= ANALOG_READ_COUNT;
+
+    if (heaterR > HEATER_R_MAX || heaterR < HEATER_R_MIN) {
+        Serial.print("Heater temperature resistance out of bounds: ");
+        Serial.println(heaterR);
+        heaterR = 0;
+        setHeater(false);
+    }
+}
+
+void controlHeater() {
+    bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+    if (heaterR == 0 || tempDegC == TEMP_ERROR_VALUE) {
+        if (heaterOn) setHeater(false);
+        return;
+    }
+
+    if (heaterOn && (heaterR < HEATER_R_OFF || tempDegC > tempSetDegC)) {
+        setHeater(false);
+        return;
+    }
+
+    u32_t currentTime = millis();
+    u32_t timeLeftToRunMs = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
+
+    if (heaterOn && timeLeftToRunMs == 0) {
+        Serial.println("Max heater time reached");
+        setHeater(false);
+        return;
+    }
+
+    if (!heaterOn &&
+        timeLeftToRunMs > 0 &&
+        heaterR > HEATER_R_ON &&
+        tempDegC < (tempSetDegC - CHAMBER_TEMP_ON_DEADBAND)
+        ) {
+        setHeater(true);
+    }
+}
+
+void controlHeaterFan() {
+    bool fanOn = digitalRead(HEATER_FAN_PIN) == LOW;
+
+    if (heaterR == 0) {
+        if (fanOn) return;
+        Serial.print("Heater R unknown, switching heater fan ON");
+        digitalWrite(HEATER_FAN_PIN, LOW);
+        return;
+    }
+
+    bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+    u32_t currentTime = millis();
+    u32_t timeLeftToRun = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
+
+    bool shouldBeOn = heaterOn || heaterFanSet || timeLeftToRun > 0 || heaterR < HEATER_R_FAN_ON;
+    if (fanOn && shouldBeOn) return;
+
+    bool shouldBeOff = !heaterOn && !heaterFanSet && timeLeftToRun == 0 && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND;
+    if (!fanOn && shouldBeOff) return;
+
+    digitalWrite(HEATER_FAN_PIN, fanOn ? HIGH : LOW);
+    Serial.print("Switching heater fan ");
+    Serial.print(fanOn ? "OFF" : "ON");
+}
+
+void controlAuxFan() {
+    bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+
+    if (!auxFanOn && auxFanSet) {
+        Serial.print("Aux fan requested by user, switching aux fan ON");
+        digitalWrite(AUX_FAN_PIN, LOW);
+        return;
+    }
+
+    if (tempDegC == TEMP_ERROR_VALUE) {
+        if (auxFanOn) return;
+        Serial.print("Chamber temp unknown, switching aux fan ON");
+        digitalWrite(AUX_FAN_PIN, LOW);
+        return;
+    }
+
+    float auxFanTemp = tempDegC - AUX_FAN_ON_TEMP;
+
+    if (!auxFanOn && auxFanTemp > tempSetDegC) {
+        Serial.print("Chamber temp too high, switching aux fan ON");
+        digitalWrite(AUX_FAN_PIN, LOW);
+        return;
+    }
+
+    if (auxFanOn && !auxFanSet && auxFanTemp < tempSetDegC - CHAMBER_TEMP_ON_DEADBAND) {
+        Serial.print("Chamber temp within bounds, switching aux fan OFF");
+        digitalWrite(AUX_FAN_PIN, HIGH);
+    }
+}
+
+void controlDoorFan() {
+    bool doorFanOn = digitalRead(DOOR_FAN_PIN) == LOW;
+    bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+
+    bool shouldBeOn = doorFanSet || auxFanOn;
+
+    if (doorFanOn == shouldBeOn) return;
+
+    Serial.print("Switching door fan ");
+    Serial.println(doorFanOn ? "OFF" : "ON");
+    digitalWrite(DOOR_FAN_PIN, doorFanOn ? HIGH : LOW);
+}
+
+
+void setHeater(bool on) {
+    static u32_t heaterLastTimeOn = 0;
+    static u32_t heaterLastTimeOff = 0;
+
+    bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+    if (heaterOn == on) { return; }
+
+    u32_t currentTime = millis();
 
     if (on) {
         Serial.println("Switching heater ON");
-        digitalWrite(HEATER_RELAY_PIN, LOW);
+        digitalWrite(HEATER_PIN, LOW);
         heaterLastTimeOn = currentTime;
         return;
     }
 
     Serial.println("Switching heater OFF");
-    digitalWrite(HEATER_RELAY_PIN, HIGH);
+    digitalWrite(HEATER_PIN, HIGH);
 
     if (heaterLastTimeOff > 0 && heaterLastTimeOn > 0) {
         u32_t lastOffCycle = heaterLastTimeOn - heaterLastTimeOff;
