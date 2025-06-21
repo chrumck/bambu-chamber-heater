@@ -24,8 +24,8 @@ bool auxFanSet = false;
 DHTNEW dht(DHT_PIN);
 
 void setup() {
-  Serial.begin(SERIAL_BAUD_RATE);
   Serial.setRxBufferSize(SERIAL_BUFFER_SIZE);
+  Serial.begin(SERIAL_BAUD_RATE);
 
   pinMode(LIGHT_PIN, OUTPUT);
   digitalWrite(LIGHT_PIN, LOW);  // Light on by default

@@ -20,11 +20,11 @@
 #define AUX_FAN_PIN 12
 #define DOOR_FAN_PIN 14
 #define HEATER_FAN_PIN 27
-#define HEATER_PIN 33
+#define HEATER_PIN 26
 
-#define HEATER_TEMP_PIN 36
 #define DHT_PIN 23
-#define REF_VOLTAGE_PIN 22
+#define HEATER_TEMP_PIN 36
+#define REF_VOLTAGE_PIN 39
 
 #define DHT_MAX_FAIL_COUNT 5
 #define TEMP_ERROR_VALUE -100
