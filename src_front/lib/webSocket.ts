@@ -79,6 +79,8 @@ const handleWsMessage: (appState: AppState) => WebSocket["onmessage"] = (appStat
 };
 
 const handleWsError: (appState: AppState) => WebSocket["onerror"] = (appState) => (event) => {
+  clearInterval(wsKeepAliveId || undefined);
+  wsKeepAliveId = null;
   console.warn(new Date(), "handleWsError", event);
   appState.lastDataTimeStampMs = 0;
   appState.connected = false;
