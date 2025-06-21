@@ -7,7 +7,7 @@ AsyncWebSocket ws("/ws");
 volatile bool newWsMessage = false;
 
 float tempDegC = TEMP_ERROR_VALUE;
-float tempSetDegC = DEFAULT_TEMP_SET;
+u8_t tempSetDegC = DEFAULT_TEMP_SET;
 u32_t dhtFailCount = DHT_MAX_FAIL_COUNT;
 
 float vRef = 0;
@@ -358,10 +358,34 @@ void notifyWsClients() {
   static u8_t wsMessage[WS_MESSAGE_LENGTH];
   memset(&wsMessage, 0, WS_MESSAGE_LENGTH);
 
-  wsMessage[0] = 0;
-  // wsMessage[WsMessageBytes::TempDegC1] = 0;
+  u16_t tempBytes = (u16_t)((tempDegC + WS_MESSAGE_TEMP_OFFSET) * WS_MESSAGE_TEMP_FACTOR);
+  wsMessage[Byte_TempDegC_1] = tempBytes & 0xFF;
+  wsMessage[Byte_TempDegC_2] = (tempBytes >> 8) & 0xFF;
+  wsMessage[Byte_TempSetDegC] = tempSetDegC;
 
+  u32_t currentTime = millis();
+  u16_t heaterOnTimeLeftMins = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 60000 : 0;
+  wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterOnTimeLeftMins & 0xFF;
+  wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterOnTimeLeftMins >> 8) & 0xFF;
 
+  u16_t heaterRBytes = (u16_t)heaterR;
+  wsMessage[Byte_HeaterR_1] = heaterRBytes & 0xFF;
+  wsMessage[Byte_HeaterR_2] = (heaterRBytes >> 8) & 0xFF;
+
+  wsMessage[Byte_HeaterDutyCycle] = (u8_t)(heaterLastDutyCycle * 255);
+
+  u8_t flags = 0;
+  if (digitalRead(HEATER_PIN) == LOW) flags |= (1 << Flag_HeaterOn);
+  if (digitalRead(LIGHT_PIN) == LOW) flags |= (1 << Flag_LightOn);
+  if (heaterFanSet) flags |= (1 << Flag_HeaterFanSet);
+  if (digitalRead(HEATER_FAN_PIN) == LOW) flags |= (1 << Flag_HeaterFanOn);
+  if (doorFanSet) flags |= (1 << Flag_DoorVentFanSet);
+  if (digitalRead(DOOR_FAN_PIN) == LOW) flags |= (1 << Flag_DoorVentFanOn);
+  if (auxFanSet) flags |= (1 << Flag_AuxFanSet);
+  if (digitalRead(AUX_FAN_PIN) == LOW) flags |= (1 << Flag_AuxFanOn);
+  wsMessage[Byte_Flags] = flags;
+
+  ws.binaryAll(wsMessage, WS_MESSAGE_LENGTH);
 }
 
 

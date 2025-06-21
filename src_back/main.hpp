@@ -27,7 +27,7 @@
 #define REF_VOLTAGE_PIN 39
 
 #define DHT_MAX_FAIL_COUNT 5
-#define TEMP_ERROR_VALUE -100
+#define TEMP_ERROR_VALUE (-WS_MESSAGE_TEMP_OFFSET)
 
 #define ANALOG_READ_CONVERSION_FACTOR 0.0048828125
 
@@ -55,18 +55,29 @@
 
 #define WS_MESSAGE_LENGTH 9
 #define WS_MESSAGE_TEMP_FACTOR 100
-#define WS_MESSAGE_TEMP_OFFSET 100
+#define WS_MESSAGE_TEMP_OFFSET 50
 
-enum class WsMessageBytes {
-  TempDegC1 = 0,
-  TempDegC2 = 1,
-  TempSetDegC = 2,
-  HeaterOnTimeLeftMins1 = 3,
-  HeaterOnTimeLeftMins2 = 4,
-  HeaterR1 = 5,
-  HeaterR2 = 6,
-  HeaterDutyCycle = 7,
-  Flags = 8,
+enum WsMessageBytes {
+  Byte_TempDegC_1 = 0,
+  Byte_TempDegC_2 = 1,
+  Byte_TempSetDegC = 2,
+  Byte_HeaterOnTimeLeftMins1 = 3,
+  Byte_HeaterOnTimeLeftMins2 = 4,
+  Byte_HeaterR_1 = 5,
+  Byte_HeaterR_2 = 6,
+  Byte_HeaterDutyCycle = 7,
+  Byte_Flags = 8,
+};
+
+enum WsMessageFlags {
+  Flag_HeaterOn = 0,
+  Flag_LightOn = 1,
+  Flag_HeaterFanSet = 2,
+  Flag_HeaterFanOn = 3,
+  Flag_DoorVentFanSet = 4,
+  Flag_DoorVentFanOn = 5,
+  Flag_AuxFanSet = 6,
+  Flag_AuxFanOn = 7,
 };
 
 void initWifi(String ssid, String pass);
