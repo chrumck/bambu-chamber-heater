@@ -6,4 +6,9 @@ export default defineConfig({
   build: {
     assetsInlineLimit: Infinity,
   },
+  server: {
+    port: 5173,
+    strictPort: true,
+    host: "0.0.0.0",
+  },
 });
