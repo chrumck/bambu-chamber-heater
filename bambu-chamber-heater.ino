@@ -273,7 +273,7 @@ void controlHeaterFan() {
 
     if (heaterR == 0) {
         if (fanOn) return;
-        Serial.print("Heater R unknown, switching heater fan ON");
+        Serial.println("Heater R unknown, switching heater fan ON");
         digitalWrite(HEATER_FAN_PIN, LOW);
         return;
     }
@@ -290,21 +290,21 @@ void controlHeaterFan() {
 
     digitalWrite(HEATER_FAN_PIN, fanOn ? HIGH : LOW);
     Serial.print("Switching heater fan ");
-    Serial.print(fanOn ? "OFF" : "ON");
+    Serial.println(fanOn ? "OFF" : "ON");
 }
 
 void controlAuxFan() {
     bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
 
     if (!auxFanOn && auxFanSet) {
-        Serial.print("Aux fan requested by user, switching aux fan ON");
+        Serial.println("Aux fan requested by user, switching aux fan ON");
         digitalWrite(AUX_FAN_PIN, LOW);
         return;
     }
 
     if (tempDegC == TEMP_ERROR_VALUE) {
         if (auxFanOn) return;
-        Serial.print("Chamber temp unknown, switching aux fan ON");
+        Serial.println("Chamber temp unknown, switching aux fan ON");
         digitalWrite(AUX_FAN_PIN, LOW);
         return;
     }
@@ -312,13 +312,13 @@ void controlAuxFan() {
     float auxFanTemp = tempDegC - AUX_FAN_ON_TEMP;
 
     if (!auxFanOn && auxFanTemp > tempSetDegC) {
-        Serial.print("Chamber temp too high, switching aux fan ON");
+        Serial.println("Chamber temp too high, switching aux fan ON");
         digitalWrite(AUX_FAN_PIN, LOW);
         return;
     }
 
     if (auxFanOn && !auxFanSet && auxFanTemp < tempSetDegC - CHAMBER_TEMP_ON_DEADBAND) {
-        Serial.print("Chamber temp within bounds, switching aux fan OFF");
+        Serial.println("Chamber temp within bounds, switching aux fan OFF");
         digitalWrite(AUX_FAN_PIN, HIGH);
     }
 }
