@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { pushState } from "$app/navigation";
   import { page } from "$app/state";
-  import { connectWebSocket, defaultAppState, type AppState } from "$lib";
+  import { connectWebSocket, defaultAppState, invalidTemp, type AppState } from "$lib";
   import MainHeader from "./MainHeader.svelte";
   import Gauge from "./Gauge.svelte";
   import Led from "./Led.svelte";
@@ -15,13 +15,31 @@
   let webSocket: ReturnType<typeof connectWebSocket> | null = null;
 
   const closePopup = () => history.back();
+
   const openTempPopup = () => pushState("", { ...page.state, showTempPopup: true });
   const setChamberTemp = (newTemp: number) => {
     appState.tempSetDegC = newTemp;
   };
+
   const openHeaterPopup = () => pushState("", { ...page.state, showHeaterPopup: true });
   const setHeaterTime = (newTime: number) => {
     appState.heaterTimeLeftMins = newTime;
+  };
+
+  const toggleLight = () => {
+    appState.lightSet = !appState.lightSet;
+  };
+
+  const toggleHeaterFan = () => {
+    appState.heaterFanSet = !appState.heaterFanSet;
+  };
+
+  const toggleDoorFan = () => {
+    appState.doorFanSet = !appState.doorFanSet;
+  };
+
+  const toggleAuxFan = () => {
+    appState.auxFanSet = !appState.auxFanSet;
   };
 
   onMount(() => {
@@ -35,8 +53,8 @@
 
   <fieldset class="sectionContainer flexRow">
     <legend>Chamber Temp °C</legend>
-    <Gauge label="Current" value={appState.tempDegC} precision={1} />
-    <Gauge label="Target" value={appState.tempSetDegC} />
+    <Gauge label="Current" value={appState.tempDegC} invalidValue={invalidTemp} precision={1} />
+    <Gauge label="Target" value={appState.tempSetDegC} invalidValue={0} />
     <input class="setButton" type="button" value="SET" onclick={openTempPopup} />
   </fieldset>
 
@@ -51,18 +69,30 @@
       <input class="setButton" type="button" value="SET" onclick={openHeaterPopup} />
     </div>
     <div class="flexRow">
-      <Gauge horizontal label="Heater R" value={appState.heaterR} />
-      <Gauge horizontal label="Duty Cycle" value={appState.heaterDutyCycle} />
+      <Gauge horizontal label="HeaterR" value={appState.heaterR} invalidValue={0} />
+      <Gauge horizontal label="Duty Cycle" value={appState.heaterDutyCycle} invalidValue={0} />
     </div>
   </fieldset>
 
   <fieldset class="sectionContainer">
     <legend>Lights and Fans</legend>
 
-    <Switch id="light" label="Lights" />
-    <Switch id="heaterFanSet" label="Heater Fan" />
-    <Switch id="doorFanSet" label="Door Fan" />
-    <Switch id="auxFanSet" label="Aux Fan" />
+    <Switch id="light" label="Lights" on={appState.lightSet} ledOn={appState.lightSet} toggle={toggleLight} />
+    <Switch
+      id="heaterFanSet"
+      label="Heater Fan"
+      on={appState.heaterFanSet}
+      ledOn={appState.heaterFanOn}
+      toggle={toggleHeaterFan}
+    />
+    <Switch
+      id="doorFanSet"
+      label="Door Fan"
+      on={appState.doorFanSet}
+      ledOn={appState.doorFanOn}
+      toggle={toggleDoorFan}
+    />
+    <Switch id="auxFanSet" label="Aux Fan" on={appState.auxFanSet} ledOn={appState.auxFanOn} toggle={toggleAuxFan} />
   </fieldset>
   <Popup
     isOpen={page.state.showTempPopup}

@@ -1,5 +1,5 @@
 import type { AppState } from "./dataContracts";
-import { wsDeadMs, wsKeepAliveIntervalMs, wsMessageConstants } from "./constants";
+import { wsDeadMs, wsKeepAliveIntervalMs, WsMessageBytes, wsMessageConstants, WsMessageFlags } from "./constants";
 
 let webSocket: WebSocket | null = null;
 let wsKeepAliveId: number | null = null;
@@ -58,8 +58,24 @@ const handleWsMessage: (appState: AppState) => WebSocket["onmessage"] = (appStat
   appState.connected = true;
 
   const dataBytes = new Uint8Array(await event.data.arrayBuffer());
-  let tempDegC = dataBytes[0] + (dataBytes[1] << 8);
-  appState.tempDegC = tempDegC / wsMessageConstants.tempFactor + wsMessageConstants.tempOffset;
+
+  const tempRaw = dataBytes[WsMessageBytes.TempDegC_1] + (dataBytes[WsMessageBytes.TempDegC_2] << 8);
+  appState.tempDegC = tempRaw / wsMessageConstants.tempFactor + wsMessageConstants.tempOffset;
+  appState.tempSetDegC = dataBytes[WsMessageBytes.TempSetDegC];
+  appState.heaterTimeLeftMins =
+    dataBytes[WsMessageBytes.HeaterTimeLeftMins1] + (dataBytes[WsMessageBytes.HeaterTimeLeftMins2] << 8);
+  appState.heaterR = dataBytes[WsMessageBytes.HeaterR_1] + (dataBytes[WsMessageBytes.HeaterR_2] << 8);
+  appState.heaterDutyCycle = dataBytes[WsMessageBytes.HeaterDutyCycle] / wsMessageConstants.heaterDutyCycleFactor;
+
+  const flags = dataBytes[WsMessageBytes.Flags];
+  appState.heaterOn = !!(flags & (1 << WsMessageFlags.HeaterOn));
+  appState.lightSet = !!(flags & (1 << WsMessageFlags.LightOn));
+  appState.heaterFanSet = !!(flags & (1 << WsMessageFlags.HeaterFanSet));
+  appState.heaterFanOn = !!(flags & (1 << WsMessageFlags.HeaterFanOn));
+  appState.doorFanSet = !!(flags & (1 << WsMessageFlags.DoorVentFanSet));
+  appState.doorFanOn = !!(flags & (1 << WsMessageFlags.DoorVentFanOn));
+  appState.auxFanSet = !!(flags & (1 << WsMessageFlags.AuxFanSet));
+  appState.auxFanOn = !!(flags & (1 << WsMessageFlags.AuxFanOn));
 };
 
 const handleWsError: (appState: AppState) => WebSocket["onerror"] = (appState) => (event) => {

@@ -1,29 +1,33 @@
 <script lang="ts">
-  import { invalidTempDegC } from "$lib";
-
   interface Props {
     horizontal?: boolean;
     label: string;
     value: number;
+    invalidValue?: number;
     precision?: number;
   }
 
-  const { horizontal, label, value, precision = 0 }: Props = $props();
+  const { horizontal, label, value, invalidValue, precision = 0 }: Props = $props();
 </script>
 
 {#if !horizontal}
   <fieldset class="gauge">
     <legend>{label}</legend>
     <input
-      type={value === invalidTempDegC ? "text" : "number"}
-      value={value === invalidTempDegC ? "---" : value.toFixed(precision)}
+      type={value === invalidValue ? "text" : "number"}
+      value={value === invalidValue ? "---" : value.toFixed(precision)}
       disabled
     />
   </fieldset>
 {:else}
   <div class="gaugeHorizontal">
-    <label for="gaugeHorizontal_{label}">Duty Cycle:</label>
-    <input id="gaugeHorizontal_{label}" type="number" {value} disabled />
+    <label for="gaugeHorizontal_{label}">{label}:</label>
+    <input
+      id="gaugeHorizontal_{label}"
+      type={value === invalidValue ? "text" : "number"}
+      value={value === invalidValue ? "---" : value.toFixed(precision)}
+      disabled
+    />
   </div>
 {/if}
 

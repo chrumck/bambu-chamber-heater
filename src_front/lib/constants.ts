@@ -40,8 +40,8 @@ export enum WsMessageBytes {
   TempDegC_1 = 0,
   TempDegC_2 = 1,
   TempSetDegC = 2,
-  HeaterOnTimeLeftMins1 = 3,
-  HeaterOnTimeLeftMins2 = 4,
+  HeaterTimeLeftMins1 = 3,
+  HeaterTimeLeftMins2 = 4,
   HeaterR_1 = 5,
   HeaterR_2 = 6,
   HeaterDutyCycle = 7,
@@ -86,9 +86,10 @@ export const enum WsRequestCode {
 export const wsMessageConstants = {
   tempOffset: -50,
   tempFactor: 100,
+  heaterDutyCycleFactor: 255,
 };
 
 /**
  * The value representing an invalid temperature in degrees Celsius.
  */
-export const invalidTempDegC = -50;
+export const invalidTemp = -50;

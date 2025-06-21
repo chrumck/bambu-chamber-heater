@@ -1,16 +1,24 @@
 <script lang="ts">
   import Led from "./Led.svelte";
-  const { id, label } = $props();
 
-  let isOn = $state(false);
+  interface Props {
+    id: string;
+    label: string;
+    on: boolean;
+    toggle?: () => void;
+    ledOn: boolean;
+  }
+  const { id, label, on, toggle, ledOn }: Props = $props();
 </script>
 
 <div class="switch">
   <span class="label">{label}</span>
-  <label for={id}>
-    <input type="checkbox" {id} bind:checked={isOn} />
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <label for={id} onclick={toggle}>
+    <input type="checkbox" {id} checked={on} disabled />
   </label>
-  <Led on={isOn} />
+  <Led on={ledOn} />
 </div>
 
 <style>
