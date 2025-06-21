@@ -3,57 +3,69 @@ import { wsDeadMs, wsKeepAliveIntervalMs, WsMessageBytes, wsMessageConstants, Ws
 
 let webSocket: WebSocket | null = null;
 let wsKeepAliveId: number | null = null;
+let attemptRestart: boolean = true;
 
 export const connectWebSocket = (
   appState: AppState,
   webSocketUrl: string,
 ): { send: (request: Uint8Array) => void; close: () => void } => {
+  attemptRestart = true;
+
   webSocket = new WebSocket(webSocketUrl);
-  webSocket.onclose = handleWsClose(appState);
-  webSocket.onopen = handleWsOpen(appState, webSocketUrl);
+  webSocket.onopen = handleWsOpen(appState);
+  webSocket.onclose = handleWsClose(appState, webSocketUrl);
   webSocket.onmessage = handleWsMessage(appState);
   webSocket.onerror = handleWsError(appState);
 
-  return { close: () => webSocket?.close(), send: (request: Uint8Array) => webSocket?.send(request) };
-};
-
-const handleWsClose: (appState: AppState) => WebSocket["onclose"] = (appState) => () => {
-  clearInterval(wsKeepAliveId || undefined);
-  wsKeepAliveId = null;
-  appState.lastDataTimeStampMs = 0;
-  appState.connected = false;
-};
-
-const handleWsOpen: (appState: AppState, webSocketUrl: string) => WebSocket["onopen"] =
-  (appState, webSocketUrl) => () => {
-    appState.lastDataTimeStampMs = new Date().getTime();
-    appState.connected = true;
-
-    wsKeepAliveId = setInterval(() => {
-      const currentTimeStamp = new Date().getTime();
-
-      appState.connected =
-        webSocket?.readyState === WebSocket.OPEN &&
-        currentTimeStamp - wsKeepAliveIntervalMs < appState.lastDataTimeStampMs;
-
-      if (appState.connected) return;
-
-      if (webSocket?.readyState !== WebSocket.CLOSED && currentTimeStamp - appState.lastDataTimeStampMs < wsDeadMs) {
-        return;
-      }
-
-      try {
-        webSocket?.close();
-      } catch (closingError) {
-        console.error("Error closing socket", closingError);
-      }
-
-      webSocket = null;
-      clearInterval(wsKeepAliveId || undefined);
-      wsKeepAliveId = null;
-      setTimeout(() => connectWebSocket(appState, webSocketUrl), 100);
-    }, wsKeepAliveIntervalMs);
+  const close = () => {
+    attemptRestart = false;
+    webSocket?.close();
+    webSocket = null;
   };
+
+  return { close, send: (request: Uint8Array) => webSocket?.send(request) };
+};
+
+const tryCloseWebSocket = () => {
+  try {
+    webSocket?.close();
+  } catch (closingError) {
+    console.error("Error closing socket", closingError);
+  }
+};
+
+const handleWsClose: (appState: AppState, webSocketUrl: string) => WebSocket["onclose"] =
+  (appState, webSocketUrl) => () => {
+    clearInterval(wsKeepAliveId || undefined);
+    wsKeepAliveId = null;
+    appState.lastDataTimeStampMs = 0;
+    appState.connected = false;
+    if (attemptRestart) setTimeout(() => connectWebSocket(appState, webSocketUrl), wsKeepAliveIntervalMs / 2);
+  };
+
+const handleWsOpen: (appState: AppState) => WebSocket["onopen"] = (appState) => () => {
+  console.info("Socket connection opened");
+
+  appState.lastDataTimeStampMs = new Date().getTime();
+  appState.connected = true;
+
+  wsKeepAliveId = setInterval(() => {
+    const currentTimeStamp = new Date().getTime();
+
+    appState.connected =
+      webSocket?.readyState === WebSocket.OPEN &&
+      currentTimeStamp - wsKeepAliveIntervalMs < appState.lastDataTimeStampMs;
+
+    if (appState.connected) return;
+
+    if (webSocket?.readyState !== WebSocket.CLOSED && currentTimeStamp - appState.lastDataTimeStampMs < wsDeadMs) {
+      return;
+    }
+
+    console.warn("Socket connection timed out, closing connection");
+    tryCloseWebSocket();
+  }, wsKeepAliveIntervalMs);
+};
 
 const handleWsMessage: (appState: AppState) => WebSocket["onmessage"] = (appState) => async (event) => {
   appState.lastDataTimeStampMs = new Date().getTime();
@@ -81,10 +93,8 @@ const handleWsMessage: (appState: AppState) => WebSocket["onmessage"] = (appStat
 };
 
 const handleWsError: (appState: AppState) => WebSocket["onerror"] = (appState) => (event) => {
-  clearInterval(wsKeepAliveId || undefined);
-  wsKeepAliveId = null;
-  console.warn(new Date(), "handleWsError", event);
+  console.warn(new Date(), "Socket error, closing connection", event);
   appState.lastDataTimeStampMs = 0;
   appState.connected = false;
-  webSocket?.close();
+  tryCloseWebSocket();
 };
