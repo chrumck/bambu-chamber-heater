@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { invalidTempDegC } from "$lib";
+
   interface Props {
     horizontal?: boolean;
     label: string;
@@ -12,7 +14,11 @@
 {#if !horizontal}
   <fieldset class="gauge">
     <legend>{label}</legend>
-    <input type="number" value={value.toFixed(precision)} disabled />
+    <input
+      type={value === invalidTempDegC ? "text" : "number"}
+      value={value === invalidTempDegC ? "---" : value.toFixed(precision)}
+      disabled
+    />
   </fieldset>
 {:else}
   <div class="gaugeHorizontal">
@@ -35,7 +41,7 @@
     padding: 0 0.25rem;
   }
 
-  .gauge input[type="number"] {
+  .gauge input {
     text-align: right;
     padding-right: 0.25rem;
     color: var(--clr-white);
@@ -43,6 +49,10 @@
     border: none;
     width: 5rem;
     font-size: 1.2rem;
+  }
+
+  .gauge input[type="text"] {
+    text-align: center;
   }
 
   .gaugeHorizontal {
@@ -54,7 +64,7 @@
     margin-right: 0.5rem;
   }
 
-  .gaugeHorizontal input[type="number"] {
+  .gaugeHorizontal input {
     background-color: var(--clr-bkg);
     color: var(--clr-white-dark);
 

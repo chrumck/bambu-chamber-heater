@@ -78,3 +78,17 @@ export const enum WsRequestCode {
   SetDoorVentFan = 0xa5,
   SetAuxFan = 0xa6,
 }
+
+/**
+ * The web socket message constants.
+ * These are used to convert temperature values to/from the web socket message format.
+ */
+export const wsMessageConstants = {
+  tempOffset: -50,
+  tempFactor: 100,
+};
+
+/**
+ * The value representing an invalid temperature in degrees Celsius.
+ */
+export const invalidTempDegC = -50;

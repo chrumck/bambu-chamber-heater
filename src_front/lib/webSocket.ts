@@ -1,5 +1,5 @@
 import type { AppState } from "./dataContracts";
-import { wsDeadMs, wsKeepAliveIntervalMs } from "./constants";
+import { wsDeadMs, wsKeepAliveIntervalMs, wsMessageConstants } from "./constants";
 
 let webSocket: WebSocket | null = null;
 let wsKeepAliveId: number | null = null;
@@ -58,6 +58,8 @@ const handleWsMessage: (appState: AppState) => WebSocket["onmessage"] = (appStat
   appState.connected = true;
 
   const dataBytes = new Uint8Array(await event.data.arrayBuffer());
+  let tempDegC = dataBytes[0] + (dataBytes[1] << 8);
+  appState.tempDegC = tempDegC / wsMessageConstants.tempFactor + wsMessageConstants.tempOffset;
 };
 
 const handleWsError: (appState: AppState) => WebSocket["onerror"] = (appState) => (event) => {
