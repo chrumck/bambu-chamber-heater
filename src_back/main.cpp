@@ -126,19 +126,49 @@ void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
   }
 }
 
-void handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
+void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   AwsFrameInfo* info = (AwsFrameInfo*)arg;
-  if (!info->final || info->index != 0 || info->len != len || info->opcode != WS_BINARY) return;
+  if (!info->final || info->index != 0 || info->len != length || info->opcode != WS_BINARY) return;
 
-  // data[len] = 0;
-  // message = (char*)data;
-  // steps = message.substring(0, message.indexOf("&"));
-  // direction = message.substring(message.indexOf("&") + 1, message.length());
-  // Serial.print("steps");
-  // Serial.println(steps);
-  // Serial.print("direction");
-  // Serial.println(direction);
-  // notifyWsClients(direction);
+  if (length != 2 && (data[0] == WsRequest_SetHeaterTimeLeft && length != 3)) {
+    Serial.printf("Invalid ws request length of %d for requestcode: %x \n", length, data[0]);
+    return;
+  }
+
+  switch (data[0]) {
+  case WsRequest_SetTemp: {
+    tempSet = data[1];
+    Serial.printf("Setting chamber temp to %d \n", tempSet);
+    break;
+  }
+  case WsRequest_SetHeaterTimeLeft: {
+    u16_t timeLeftMins = data[1] | (data[2] << 8);
+    heaterOnMaxTime = millis() + timeLeftMins * 60000;
+    Serial.printf("Setting heater on time left to %d minutes \n", timeLeftMins);
+    break;
+  }
+  case WsRequest_SetLight: {
+    bool lightOn = data[1] == 1;
+    Serial.printf("Setting light to %s \n", lightOn ? "ON" : "OFF");
+    digitalWrite(LIGHT_PIN, lightOn ? LOW : HIGH);
+    break;
+  }
+  case WsRequest_SetHeaterFan: {
+    heaterFanSet = data[1] == 1;
+    Serial.printf("Setting heater fan to %s \n", heaterFanSet ? "ON" : "OFF");
+    break;
+  }
+  case WsRequest_SetDoorFan: {
+    doorFanSet = data[1] == 1;
+    Serial.printf("Setting door vent fan to %s \n", doorFanSet ? "ON" : "OFF");
+    break;
+  }
+  case WsRequest_SetAuxFan: {
+    auxFanSet = data[1] == 1;
+    Serial.printf("Setting aux fan to %s \n", auxFanSet ? "ON" : "OFF");
+    break;
+  }
+  }
 
   newWsMessage = true;
 }
@@ -207,7 +237,7 @@ void readHeaterR() {
   for (int i = 0; i < ANALOG_READ_COUNT; i++) {
     float currentVRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
     if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
-      Serial.printf("Reference voltage out of bounds: %f \n", currentVRef);
+      Serial.printf("Reference voltage out of bounds: %.2f \n", currentVRef);
       vRef = 0;
       heaterR = 0;
       setHeater(false);
@@ -224,7 +254,7 @@ void readHeaterR() {
   heaterR /= ANALOG_READ_COUNT;
 
   if (heaterR > HEATER_R_MAX || heaterR < HEATER_R_MIN) {
-    Serial.printf("Heater temperature resistance out of bounds: %f \n", heaterR);
+    Serial.printf("Heater temperature resistance out of bounds: %.0f \n", heaterR);
     heaterR = 0;
     setHeater(false);
   }
@@ -365,9 +395,9 @@ void notifyWsClients() {
   wsMessage[Byte_TempSet] = tempSet;
 
   u32_t currentTime = millis();
-  u16_t heaterOnTimeLeftMins = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 60000 : 0;
-  wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterOnTimeLeftMins & 0xFF;
-  wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterOnTimeLeftMins >> 8) & 0xFF;
+  u16_t heaterTimeLeftMins = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 60000 : 0;
+  wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterTimeLeftMins & 0xFF;
+  wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterTimeLeftMins >> 8) & 0xFF;
 
   u16_t heaterRBytes = (u16_t)heaterR;
   wsMessage[Byte_HeaterR_1] = heaterRBytes & 0xFF;
@@ -394,8 +424,8 @@ void notifyWsClients() {
   ws.binaryAll(wsMessage, WS_MESSAGE_LENGTH);
 
   Serial.printf(
-    "Temp: %.2f, Set: %d, heaterR:%d,DutyCycle:%.2f,heaterOn:%d,lightOn: %d,heaterFanSet:%d,heaterFanOn:%d,doorFanSet:%d,doorFanOn:%d,auxFanSet:%d,auxFanOn:%d \n",
-    temp, tempSet, (u16_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
+    "Temp: %.2f, Set:%d, TimeLeftMins:%d, Vref:%.2f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
+    temp, tempSet, heaterTimeLeftMins, vRef, (u16_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
 }
 
 

@@ -79,6 +79,15 @@ enum WsMessageFlags {
   Flag_AuxFanOn = 7,
 };
 
+enum WsRequestCode {
+  WsRequest_SetTemp = 0xa1,
+  WsRequest_SetHeaterTimeLeft = 0xa2,
+  WsRequest_SetLight = 0xa3,
+  WsRequest_SetHeaterFan = 0xa4,
+  WsRequest_SetDoorFan = 0xa5,
+  WsRequest_SetAuxFan = 0xa6,
+};
+
 void initWifi(String ssid, String pass);
 void initWebSocket();
 void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);

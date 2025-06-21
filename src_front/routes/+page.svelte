@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { pushState } from "$app/navigation";
   import { page } from "$app/state";
-  import { connectWebSocket, defaultAppState, invalidTemp, type AppState } from "$lib";
+  import { connectWebSocket, defaultAppState, invalidTemp, WsRequestCode, type AppState } from "$lib";
   import MainHeader from "./MainHeader.svelte";
   import Gauge from "./Gauge.svelte";
   import Led from "./Led.svelte";
@@ -18,27 +18,33 @@
 
   const openTempPopup = () => pushState("", { ...page.state, showTempPopup: true });
   const setChamberTemp = (newTemp: number) => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetTemp, newTemp]));
     appState.tempSetDegC = newTemp;
   };
 
   const openHeaterPopup = () => pushState("", { ...page.state, showHeaterPopup: true });
   const setHeaterTime = (newTime: number) => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetHeaterTimeLeft, newTime & 0xff, newTime >> 8]));
     appState.heaterTimeLeftMins = newTime;
   };
 
   const toggleLight = () => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetLight, appState.lightSet ? 0 : 1]));
     appState.lightSet = !appState.lightSet;
   };
 
   const toggleHeaterFan = () => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetHeaterFan, appState.heaterFanSet ? 0 : 1]));
     appState.heaterFanSet = !appState.heaterFanSet;
   };
 
   const toggleDoorFan = () => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetDoorFan, appState.doorFanSet ? 0 : 1]));
     appState.doorFanSet = !appState.doorFanSet;
   };
 
   const toggleAuxFan = () => {
+    webSocket?.send(new Uint8Array([WsRequestCode.SetAuxFan, appState.auxFanSet ? 0 : 1]));
     appState.auxFanSet = !appState.auxFanSet;
   };
 

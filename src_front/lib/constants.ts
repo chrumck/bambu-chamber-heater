@@ -75,7 +75,7 @@ export const enum WsRequestCode {
   SetHeaterTimeLeft = 0xa2,
   SetLight = 0xa3,
   SetHeaterFan = 0xa4,
-  SetDoorVentFan = 0xa5,
+  SetDoorFan = 0xa5,
   SetAuxFan = 0xa6,
 }
 
