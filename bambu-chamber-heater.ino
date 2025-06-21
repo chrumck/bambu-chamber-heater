@@ -53,12 +53,28 @@
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
 #define AUX_FAN_ON_TEMP 1.0
 
-Preferences prefs;
+#define WS_MESSAGE_LENGTH 9
+#define WS_MESSAGE_TEMP_FACTOR 100
+#define WS_MESSAGE_TEMP_OFFSET 100
 
+enum class WsMessageBytes {
+  TempDegC1 = 0,
+  TempDegC2 = 1,
+  TempSetDegC = 2,
+  HeaterOnTimeLeftMins1 = 3,
+  HeaterOnTimeLeftMins2 = 4,
+  HeaterR1 = 5,
+  HeaterR2 = 6,
+  HeaterDutyCycle = 7,
+  Flags = 8,
+};
+
+
+Preferences prefs;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-volatile bool wsNewRequest = false;
+volatile bool newWsMessage = false;
 
 float tempDegC = TEMP_ERROR_VALUE;
 float tempSetDegC = DEFAULT_TEMP_SET;
@@ -81,22 +97,6 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Serial.setRxBufferSize(SERIAL_BUFFER_SIZE);
 
-    prefs.begin(PREFS_NAMESPACE, false);
-    String ssid = prefs.getString(PREFS_KEY_WIFI_SSID);
-    String pass = prefs.getString(PREFS_KEY_WIFI_PASS);
-    prefs.end();
-
-    if (ssid.isEmpty() || pass.isEmpty()) {
-        Serial.println("Wifi credentials not available, skipping setting up web server");
-    }
-    else {
-        initWifi(ssid, pass);
-
-        if (!LittleFS.begin(true)) {
-            Serial.println("An error has occurred while mounting LittleFS");
-        }
-    }
-
     pinMode(LIGHT_PIN, OUTPUT);
     digitalWrite(LIGHT_PIN, LOW);  // Light on by default
     pinMode(AUX_FAN_PIN, OUTPUT);
@@ -109,6 +109,27 @@ void setup() {
     digitalWrite(HEATER_PIN, HIGH);
 
     dht.reset();
+
+    prefs.begin(PREFS_NAMESPACE, false);
+    String ssid = prefs.getString(PREFS_KEY_WIFI_SSID);
+    String pass = prefs.getString(PREFS_KEY_WIFI_PASS);
+    prefs.end();
+
+    if (ssid.isEmpty() || pass.isEmpty()) {
+        Serial.println("Wifi credentials not available, skipping setting up web server");
+        return;
+    }
+
+    initWifi(ssid, pass);
+    initWebSocket();
+    if (!LittleFS.begin(true)) Serial.println("An error has occurred while mounting LittleFS");
+
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(LittleFS, "/index.html", "text/html");
+    });
+
+    server.serveStatic("/", LittleFS, "/");
+    server.begin();
 }
 
 void loop() {
@@ -117,9 +138,9 @@ void loop() {
     static u32_t lastCycleTime = 0;
 
     u32_t currentTime = millis();
-    if (wsNewRequest || currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
+    if (!newWsMessage && currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
 
-    wsNewRequest = false;
+    newWsMessage = false;
     lastCycleTime = currentTime;
 
     readChamberTemp();
@@ -130,19 +151,65 @@ void loop() {
     controlAuxFan();
     controlDoorFan();
 
+    notifyWsClients();
     ws.cleanupClients();
 }
 
 void initWifi(String ssid, String pass) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, pass);
-    Serial.print("Connecting to WiFi ..");
+
+    Serial.print("Connecting to WiFi: ");
+    Serial.println(ssid);
+
     while (WiFi.status() != WL_CONNECTED) {
         Serial.print('.');
         delay(1000);
     }
+
     Serial.print("WiFi connected, IP: ");
     Serial.println(WiFi.localIP());
+}
+
+void initWebSocket() {
+    Serial.println("Initializing web socket");
+    ws.onEvent(wsOnEvent);
+    server.addHandler(&ws);
+}
+
+void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
+    switch (type) {
+    case WS_EVT_CONNECT:
+        Serial.printf("WebSocket client #%u connected from %s \n", client->id(), client->remoteIP().toString().c_str());
+        newWsMessage = true;
+        break;
+    case WS_EVT_DISCONNECT:
+        Serial.printf("WebSocket client #%u disconnected \n", client->id());
+        break;
+    case WS_EVT_DATA:
+        handleWebSocketMessage(arg, data, len);
+        break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+        break;
+    }
+}
+
+void handleWebSocketMessage(void* arg, uint8_t* data, size_t len) {
+    AwsFrameInfo* info = (AwsFrameInfo*)arg;
+    if (!info->final || info->index != 0 || info->len != len || info->opcode != WS_BINARY) return;
+
+    // data[len] = 0;
+    // message = (char*)data;
+    // steps = message.substring(0, message.indexOf("&"));
+    // direction = message.substring(message.indexOf("&") + 1, message.length());
+    // Serial.print("steps");
+    // Serial.println(steps);
+    // Serial.print("direction");
+    // Serial.println(direction);
+    // notifyWsClients(direction);
+
+    newWsMessage = true;
 }
 
 void receiveSerial() {
@@ -178,10 +245,7 @@ void savePrefs(char* prefsKey, String prefsValue) {
     prefs.putString(prefsKey, prefsValue);
     prefs.end();
 
-    Serial.print("Saved key: ");
-    Serial.print(prefsKey);
-    Serial.print(" ,value: ");
-    Serial.println(prefsValue.c_str());
+    Serial.printf("Saved key: %s, value: %s \n", prefsKey, prefsValue.c_str());
     Serial.println("You need to reboot for changes to take effect");
 }
 
@@ -194,13 +258,12 @@ void readChamberTemp() {
         return;
     }
 
-    Serial.print("Failed chamber temp read, result: ");
-    Serial.println(chamberTempReadResult);
+    Serial.printf("Failed chamber temp read, result: %d \n", chamberTempReadResult);
 
     dhtFailCount++;
 
     if (dhtFailCount >= DHT_MAX_FAIL_COUNT) {
-        Serial.println("Too many failed chamber temp reads");
+        Serial.println("Too many failed chamber temp reads, setting temp value to invalid");
         tempDegC = TEMP_ERROR_VALUE;
         setHeater(false);
     }
@@ -213,8 +276,7 @@ void readHeaterR() {
     for (int i = 0; i < ANALOG_READ_COUNT; i++) {
         float currentVRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
         if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
-            Serial.print("Reference voltage out of bounds: ");
-            Serial.println(currentVRef);
+            Serial.printf("Reference voltage out of bounds: %f \n", currentVRef);
             vRef = 0;
             heaterR = 0;
             setHeater(false);
@@ -231,8 +293,7 @@ void readHeaterR() {
     heaterR /= ANALOG_READ_COUNT;
 
     if (heaterR > HEATER_R_MAX || heaterR < HEATER_R_MIN) {
-        Serial.print("Heater temperature resistance out of bounds: ");
-        Serial.println(heaterR);
+        Serial.printf("Heater temperature resistance out of bounds: %f \n", heaterR);
         heaterR = 0;
         setHeater(false);
     }
@@ -268,6 +329,35 @@ void controlHeater() {
     }
 }
 
+void setHeater(bool on) {
+    static u32_t heaterLastTimeOn = 0;
+    static u32_t heaterLastTimeOff = 0;
+
+    bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+    if (heaterOn == on) { return; }
+
+    u32_t currentTime = millis();
+
+    if (on) {
+        Serial.println("Switching heater ON");
+        digitalWrite(HEATER_PIN, LOW);
+        heaterLastTimeOn = currentTime;
+        return;
+    }
+
+    Serial.println("Switching heater OFF");
+    digitalWrite(HEATER_PIN, HIGH);
+
+    if (heaterLastTimeOff > 0 && heaterLastTimeOn > 0) {
+        u32_t lastOffCycle = heaterLastTimeOn - heaterLastTimeOff;
+        u32_t lastOnCycle = currentTime - heaterLastTimeOn;
+        heaterLastDutyCycle = (float)lastOnCycle / (lastOffCycle + lastOnCycle);
+        Serial.printf("Last duty cycle: %f \n", heaterLastDutyCycle);
+    }
+
+    heaterLastTimeOff = currentTime;
+}
+
 void controlHeaterFan() {
     bool fanOn = digitalRead(HEATER_FAN_PIN) == LOW;
 
@@ -289,8 +379,7 @@ void controlHeaterFan() {
     if (!fanOn && shouldBeOff) return;
 
     digitalWrite(HEATER_FAN_PIN, fanOn ? HIGH : LOW);
-    Serial.print("Switching heater fan ");
-    Serial.println(fanOn ? "OFF" : "ON");
+    Serial.printf("Switching heater fan %s \n", fanOn ? "OFF" : "ON");
 }
 
 void controlAuxFan() {
@@ -318,51 +407,30 @@ void controlAuxFan() {
     }
 
     if (auxFanOn && !auxFanSet && auxFanTemp < tempSetDegC - CHAMBER_TEMP_ON_DEADBAND) {
-        Serial.println("Chamber temp within bounds, switching aux fan OFF");
+        Serial.println("Chamber temp below set, switching aux fan OFF");
         digitalWrite(AUX_FAN_PIN, HIGH);
     }
 }
 
 void controlDoorFan() {
-    bool doorFanOn = digitalRead(DOOR_FAN_PIN) == LOW;
+    bool fanOn = digitalRead(DOOR_FAN_PIN) == LOW;
     bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
 
     bool shouldBeOn = doorFanSet || auxFanOn;
 
-    if (doorFanOn == shouldBeOn) return;
+    if (fanOn == shouldBeOn) return;
 
-    Serial.print("Switching door fan ");
-    Serial.println(doorFanOn ? "OFF" : "ON");
-    digitalWrite(DOOR_FAN_PIN, doorFanOn ? HIGH : LOW);
+    Serial.printf("Switching foor fan %s \n", fanOn ? "OFF" : "ON");
+    digitalWrite(DOOR_FAN_PIN, fanOn ? HIGH : LOW);
+}
+
+void notifyWsClients() {
+    static u8_t wsMessage[WS_MESSAGE_LENGTH];
+    memset(&wsMessage, 0, WS_MESSAGE_LENGTH);
+
+    wsMessage[WsMessageBytes::TempDegC1] = 0;
+
+
 }
 
 
-void setHeater(bool on) {
-    static u32_t heaterLastTimeOn = 0;
-    static u32_t heaterLastTimeOff = 0;
-
-    bool heaterOn = digitalRead(HEATER_PIN) == LOW;
-    if (heaterOn == on) { return; }
-
-    u32_t currentTime = millis();
-
-    if (on) {
-        Serial.println("Switching heater ON");
-        digitalWrite(HEATER_PIN, LOW);
-        heaterLastTimeOn = currentTime;
-        return;
-    }
-
-    Serial.println("Switching heater OFF");
-    digitalWrite(HEATER_PIN, HIGH);
-
-    if (heaterLastTimeOff > 0 && heaterLastTimeOn > 0) {
-        u32_t lastOffCycle = heaterLastTimeOn - heaterLastTimeOff;
-        u32_t lastOnCycle = currentTime - heaterLastTimeOn;
-        heaterLastDutyCycle = (float)lastOnCycle / (lastOffCycle + lastOnCycle);
-        Serial.print("Last duty cycle:");
-        Serial.println(heaterLastDutyCycle);
-    }
-
-    heaterLastTimeOff = currentTime;
-}
