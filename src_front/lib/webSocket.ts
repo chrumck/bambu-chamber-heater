@@ -47,8 +47,10 @@ const handleWsOpen: (appState: AppState, webSocketUrl: string) => WebSocket["ono
       } catch (closingError) {
         console.error("Error closing socket", closingError);
       }
-      webSocket = null;
 
+      webSocket = null;
+      clearInterval(wsKeepAliveId || undefined);
+      wsKeepAliveId = null;
       setTimeout(() => connectWebSocket(appState, webSocketUrl), 100);
     }, wsKeepAliveIntervalMs);
   };
