@@ -6,8 +6,9 @@ AsyncWebSocket ws("/ws");
 
 volatile bool newWsMessage = false;
 
-float tempDegC = TEMP_ERROR_VALUE;
-u8_t tempSetDegC = DEFAULT_TEMP_SET;
+// All temperatures in DegC if otherwise not specified
+float temp = TEMP_ERROR_VALUE;
+u8_t tempSet = DEFAULT_TEMP_SET;
 u32_t dhtFailCount = DHT_MAX_FAIL_COUNT;
 
 float vRef = 0;
@@ -184,7 +185,7 @@ void readChamberTemp() {
 
   if (chamberTempReadResult == DHTLIB_OK) {
     dhtFailCount = 0;
-    tempDegC = dht.getTemperature();
+    temp = dht.getTemperature();
     return;
   }
 
@@ -194,7 +195,7 @@ void readChamberTemp() {
 
   if (dhtFailCount >= DHT_MAX_FAIL_COUNT) {
     Serial.println("Too many failed chamber temp reads, setting temp value to invalid");
-    tempDegC = TEMP_ERROR_VALUE;
+    temp = TEMP_ERROR_VALUE;
     setHeater(false);
   }
 }
@@ -231,12 +232,12 @@ void readHeaterR() {
 
 void controlHeater() {
   bool heaterOn = digitalRead(HEATER_PIN) == LOW;
-  if (heaterR == 0 || tempDegC == TEMP_ERROR_VALUE) {
+  if (heaterR == 0 || temp == TEMP_ERROR_VALUE) {
     if (heaterOn) setHeater(false);
     return;
   }
 
-  if (heaterOn && (heaterR < HEATER_R_OFF || tempDegC > tempSetDegC)) {
+  if (heaterOn && (heaterR < HEATER_R_OFF || temp > tempSet)) {
     setHeater(false);
     return;
   }
@@ -253,7 +254,7 @@ void controlHeater() {
   if (!heaterOn &&
     timeLeftToRunMs > 0 &&
     heaterR > HEATER_R_ON &&
-    tempDegC < (tempSetDegC - CHAMBER_TEMP_ON_DEADBAND)
+    temp < (tempSet - CHAMBER_TEMP_ON_DEADBAND)
     ) {
     setHeater(true);
   }
@@ -321,22 +322,22 @@ void controlAuxFan() {
     return;
   }
 
-  if (tempDegC == TEMP_ERROR_VALUE) {
+  if (temp == TEMP_ERROR_VALUE) {
     if (auxFanOn) return;
     Serial.println("Chamber temp unknown, switching aux fan ON");
     digitalWrite(AUX_FAN_PIN, LOW);
     return;
   }
 
-  float auxFanTemp = tempDegC - AUX_FAN_ON_TEMP;
+  float auxFanTemp = temp - AUX_FAN_ON_TEMP;
 
-  if (!auxFanOn && auxFanTemp > tempSetDegC) {
+  if (!auxFanOn && auxFanTemp > tempSet) {
     Serial.println("Chamber temp too high, switching aux fan ON");
     digitalWrite(AUX_FAN_PIN, LOW);
     return;
   }
 
-  if (auxFanOn && !auxFanSet && auxFanTemp < tempSetDegC - CHAMBER_TEMP_ON_DEADBAND) {
+  if (auxFanOn && !auxFanSet && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
     Serial.println("Chamber temp below set, switching aux fan OFF");
     digitalWrite(AUX_FAN_PIN, HIGH);
   }
@@ -358,10 +359,10 @@ void notifyWsClients() {
   static u8_t wsMessage[WS_MESSAGE_LENGTH];
   memset(&wsMessage, 0, WS_MESSAGE_LENGTH);
 
-  u16_t tempBytes = (u16_t)((tempDegC + WS_MESSAGE_TEMP_OFFSET) * WS_MESSAGE_TEMP_FACTOR);
-  wsMessage[Byte_TempDegC_1] = tempBytes & 0xFF;
-  wsMessage[Byte_TempDegC_2] = (tempBytes >> 8) & 0xFF;
-  wsMessage[Byte_TempSetDegC] = tempSetDegC;
+  u16_t tempBytes = (u16_t)((temp + WS_MESSAGE_TEMP_OFFSET) * WS_MESSAGE_TEMP_FACTOR);
+  wsMessage[Byte_Temp_1] = tempBytes & 0xFF;
+  wsMessage[Byte_Temp_2] = (tempBytes >> 8) & 0xFF;
+  wsMessage[Byte_TempSet] = tempSet;
 
   u32_t currentTime = millis();
   u16_t heaterOnTimeLeftMins = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 60000 : 0;
@@ -374,18 +375,27 @@ void notifyWsClients() {
 
   wsMessage[Byte_HeaterDutyCycle] = (u8_t)(heaterLastDutyCycle * 255);
 
-  u8_t flags = 0;
-  if (digitalRead(HEATER_PIN) == LOW) flags |= (1 << Flag_HeaterOn);
-  if (digitalRead(LIGHT_PIN) == LOW) flags |= (1 << Flag_LightOn);
-  if (heaterFanSet) flags |= (1 << Flag_HeaterFanSet);
-  if (digitalRead(HEATER_FAN_PIN) == LOW) flags |= (1 << Flag_HeaterFanOn);
-  if (doorFanSet) flags |= (1 << Flag_DoorVentFanSet);
-  if (digitalRead(DOOR_FAN_PIN) == LOW) flags |= (1 << Flag_DoorVentFanOn);
-  if (auxFanSet) flags |= (1 << Flag_AuxFanSet);
-  if (digitalRead(AUX_FAN_PIN) == LOW) flags |= (1 << Flag_AuxFanOn);
-  wsMessage[Byte_Flags] = flags;
+  bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+  bool lightOn = digitalRead(LIGHT_PIN) == LOW;
+  bool heaterFanOn = digitalRead(HEATER_FAN_PIN) == LOW;
+  bool doorFanOn = digitalRead(DOOR_FAN_PIN) == LOW;
+  bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+
+  wsMessage[Byte_Flags] |=
+    (heaterOn << Flag_HeaterOn) |
+    (lightOn << Flag_LightOn) |
+    (heaterFanSet << Flag_HeaterFanSet) |
+    (heaterFanOn << Flag_HeaterFanOn) |
+    (doorFanSet << Flag_DoorVentFanSet) |
+    (doorFanOn << Flag_DoorVentFanOn) |
+    (auxFanSet << Flag_AuxFanSet) |
+    (auxFanOn << Flag_AuxFanOn);
 
   ws.binaryAll(wsMessage, WS_MESSAGE_LENGTH);
+
+  Serial.printf(
+    "Temp: %.2f, Set: %d, heaterR:%d,DutyCycle:%.2f,heaterOn:%d,lightOn: %d,heaterFanSet:%d,heaterFanOn:%d,doorFanSet:%d,doorFanOn:%d,auxFanSet:%d,auxFanOn:%d \n",
+    temp, tempSet, (u16_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
 }
 
 

@@ -41,13 +41,12 @@
 #define HEATER_R_MIN 120
 #define HEATER_R_FAN_ON 35899 // 50 degC
 #define HEATER_R_DEADBAND 1000
-
+#define HEATER_R_ON 4410  // 115 degC
+#define HEATER_R_OFF 3340  // 125 degC
 // #define HEATER_R_ON 7784 // 95 degC
 // #define HEATER_R_ON 5070 // 110 degC
-#define HEATER_R_ON 4410  // 115 degC
 // #define HEATER_R_OFF 5070 // 110 degC
 // #define HEATER_R_OFF 3850 // 120 degC
-#define HEATER_R_OFF 3340  // 125 degC
 
 #define DEFAULT_TEMP_SET 30
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
@@ -58,9 +57,9 @@
 #define WS_MESSAGE_TEMP_OFFSET 50
 
 enum WsMessageBytes {
-  Byte_TempDegC_1 = 0,
-  Byte_TempDegC_2 = 1,
-  Byte_TempSetDegC = 2,
+  Byte_Temp_1 = 0,
+  Byte_Temp_2 = 1,
+  Byte_TempSet = 2,
   Byte_HeaterOnTimeLeftMins1 = 3,
   Byte_HeaterOnTimeLeftMins2 = 4,
   Byte_HeaterR_1 = 5,
