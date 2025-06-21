@@ -11,10 +11,13 @@ const config = {
       bundleStrategy: "inline",
     },
     files: {
-      assets: "static",
+      assets: "src_front/static",
       lib: "src_front/lib",
       routes: "src_front/routes",
       appTemplate: "src_front/app.html",
+    },
+    typescript: {
+      config: (config) => ({ ...config, include: [...config.include, "../src_front/**/*"] }),
     },
   },
 };
