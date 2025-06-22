@@ -1,5 +1,8 @@
 #include "./main.hpp"
 
+#define readAdcMilliVolts(_pin) \
+  ((int32_t)(analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN) + ANALOG_READ_OFFSET)
+
 Preferences prefs;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -235,18 +238,18 @@ void readHeaterR() {
   heaterR = 0;
 
   for (int i = 0; i < ANALOG_READ_COUNT; i++) {
-    float currentVRef = (analogRead(REF_VOLTAGE_PIN) * ANALOG_READ_CONVERSION_FACTOR * 2);
+    int32_t currentVRef = readAdcMilliVolts(REF_VOLTAGE_PIN) * HEATER_REF_V_ADC_RATIO;
     if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
-      Serial.printf("Reference voltage out of bounds: %.2f \n", currentVRef);
-      vRef = 0;
-      heaterR = 0;
+      Serial.printf("Reference voltage out of bounds: %.2f \n", currentVRef / 1000.0);
+      vRef = 0.0;
+      heaterR = 0.0;
       setHeater(false);
       return;
     }
 
-    vRef += currentVRef;
+    vRef += currentVRef / 1000.0;
 
-    float heaterV = (analogRead(HEATER_TEMP_PIN) * ANALOG_READ_CONVERSION_FACTOR);
+    float heaterV = readAdcMilliVolts(HEATER_TEMP_PIN) / 1000.0;
     heaterR += heaterV * HEATER_REF_R / (currentVRef - heaterV);
   }
 
