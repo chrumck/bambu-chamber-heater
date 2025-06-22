@@ -43,8 +43,8 @@
 #define switchRelayOff(_pin) switchRelay(_pin, false)
 
 #define HEATER_REF_R 4700
-#define HEATER_REF_V_MIN 4800
-#define HEATER_REF_V_MAX 5200
+#define HEATER_REF_V_MIN 3100
+#define HEATER_REF_V_MAX 3500
 #define HEATER_REF_V_ADC_RATIO 2
 
 #define HEATER_R_MAX 200000
@@ -53,6 +53,7 @@
 #define HEATER_R_DEADBAND 1000
 #define HEATER_R_ON 4410  // 115 degC
 #define HEATER_R_OFF 3340  // 125 degC
+
 // #define HEATER_R_ON 7784 // 95 degC
 // #define HEATER_R_ON 5070 // 110 degC
 // #define HEATER_R_OFF 5070 // 110 degC
