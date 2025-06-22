@@ -1,8 +1,5 @@
 #include "./main.hpp"
 
-#define readAdcMilliVolts(_pin) \
-  ((int32_t)(analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN) + ANALOG_READ_OFFSET)
-
 Preferences prefs;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");

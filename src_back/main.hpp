@@ -29,11 +29,13 @@
 #define DHT_MAX_FAIL_COUNT 5
 #define TEMP_ERROR_VALUE (-WS_MESSAGE_TEMP_OFFSET)
 
-#define ANALOG_READ_NUM -85
-#define ANALOG_READ_DEN 1000
-#define ANALOG_READ_OFFSET 100
-
 #define ANALOG_READ_COUNT 100
+#define ANALOG_READ_NUM 980
+#define ANALOG_READ_DEN 1000
+#define ANALOG_READ_OFFSET (-20)
+
+#define readAdcMilliVolts(_pin) \
+   ((int32_t)analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN + ANALOG_READ_OFFSET)
 
 #define HEATER_REF_R 4700
 #define HEATER_REF_V_MIN 4800
