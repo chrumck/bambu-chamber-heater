@@ -37,6 +37,11 @@
 #define readAdcMilliVolts(_pin) \
    ((int32_t)analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN + ANALOG_READ_OFFSET)
 
+#define isRelayOn(_pin) (digitalRead(_pin) == HIGH)
+#define switchRelay(_pin, _on) digitalWrite(_pin, _on ? HIGH : LOW)
+#define switchRelayOn(_pin) switchRelay(_pin, true)
+#define switchRelayOff(_pin) switchRelay(_pin, false)
+
 #define HEATER_REF_R 4700
 #define HEATER_REF_V_MIN 4800
 #define HEATER_REF_V_MAX 5200

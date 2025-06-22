@@ -29,15 +29,15 @@ void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
 
   pinMode(LIGHT_PIN, OUTPUT);
-  digitalWrite(LIGHT_PIN, LOW);  // Light on by default
+  switchRelayOn(LIGHT_PIN);  // Light on by default
   pinMode(AUX_FAN_PIN, OUTPUT);
-  digitalWrite(AUX_FAN_PIN, HIGH);
+  switchRelayOff(AUX_FAN_PIN);
   pinMode(DOOR_FAN_PIN, OUTPUT);
-  digitalWrite(DOOR_FAN_PIN, HIGH);
+  switchRelayOff(DOOR_FAN_PIN);
   pinMode(HEATER_FAN_PIN, OUTPUT);
-  digitalWrite(HEATER_FAN_PIN, HIGH);
+  switchRelayOff(HEATER_FAN_PIN);
   pinMode(HEATER_PIN, OUTPUT);
-  digitalWrite(HEATER_PIN, HIGH);
+  switchRelayOff(HEATER_PIN);
 
   dht.reset();
 
@@ -150,7 +150,7 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   case WsRequest_SetLight: {
     bool lightOn = data[1] == 1;
     Serial.printf("Setting light to %s \n", lightOn ? "ON" : "OFF");
-    digitalWrite(LIGHT_PIN, lightOn ? LOW : HIGH);
+    switchRelay(LIGHT_PIN, lightOn);
     break;
   }
   case WsRequest_SetHeaterFan: {
@@ -261,7 +261,7 @@ void readHeaterR() {
 }
 
 void controlHeater() {
-  bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+  bool heaterOn = isRelayOn(HEATER_PIN);
   if (heaterR == 0 || temp == TEMP_ERROR_VALUE) {
     if (heaterOn) setHeater(false);
     return;
@@ -294,20 +294,20 @@ void setHeater(bool on) {
   static u32_t heaterLastTimeOn = 0;
   static u32_t heaterLastTimeOff = 0;
 
-  bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+  bool heaterOn = isRelayOn(HEATER_PIN);
   if (heaterOn == on) { return; }
 
   u32_t currentTime = millis();
 
   if (on) {
     Serial.println("Switching heater ON");
-    digitalWrite(HEATER_PIN, LOW);
+    switchRelayOn(HEATER_PIN);
     heaterLastTimeOn = currentTime;
     return;
   }
 
   Serial.println("Switching heater OFF");
-  digitalWrite(HEATER_PIN, HIGH);
+  switchRelayOff(HEATER_PIN);
 
   if (heaterLastTimeOff > 0 && heaterLastTimeOn > 0) {
     u32_t lastOffCycle = heaterLastTimeOn - heaterLastTimeOff;
@@ -320,16 +320,16 @@ void setHeater(bool on) {
 }
 
 void controlHeaterFan() {
-  bool fanOn = digitalRead(HEATER_FAN_PIN) == LOW;
+  bool fanOn = isRelayOn(HEATER_FAN_PIN);
 
   if (heaterR == 0) {
     if (fanOn) return;
     Serial.println("Heater R unknown, switching heater fan ON");
-    digitalWrite(HEATER_FAN_PIN, LOW);
+    switchRelayOn(HEATER_FAN_PIN);
     return;
   }
 
-  bool heaterOn = digitalRead(HEATER_PIN) == LOW;
+  bool heaterOn = isRelayOn(HEATER_PIN);
   u32_t currentTime = millis();
   u32_t timeLeftToRun = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
 
@@ -339,23 +339,23 @@ void controlHeaterFan() {
   bool shouldBeOff = !heaterOn && !heaterFanSet && timeLeftToRun == 0 && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND;
   if (!fanOn && shouldBeOff) return;
 
-  digitalWrite(HEATER_FAN_PIN, fanOn ? HIGH : LOW);
   Serial.printf("Switching heater fan %s \n", fanOn ? "OFF" : "ON");
+  switchRelay(HEATER_FAN_PIN, !fanOn);
 }
 
 void controlAuxFan() {
-  bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+  bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
   if (!auxFanOn && auxFanSet) {
     Serial.println("Aux fan requested by user, switching aux fan ON");
-    digitalWrite(AUX_FAN_PIN, LOW);
+    switchRelayOn(AUX_FAN_PIN);
     return;
   }
 
   if (temp == TEMP_ERROR_VALUE) {
     if (auxFanOn) return;
     Serial.println("Chamber temp unknown, switching aux fan ON");
-    digitalWrite(AUX_FAN_PIN, LOW);
+    switchRelayOn(AUX_FAN_PIN);
     return;
   }
 
@@ -363,26 +363,26 @@ void controlAuxFan() {
 
   if (!auxFanOn && auxFanTemp > tempSet) {
     Serial.println("Chamber temp too high, switching aux fan ON");
-    digitalWrite(AUX_FAN_PIN, LOW);
+    switchRelayOn(AUX_FAN_PIN);
     return;
   }
 
   if (auxFanOn && !auxFanSet && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
     Serial.println("Chamber temp below set, switching aux fan OFF");
-    digitalWrite(AUX_FAN_PIN, HIGH);
+    switchRelayOff(AUX_FAN_PIN);
   }
 }
 
 void controlDoorFan() {
-  bool fanOn = digitalRead(DOOR_FAN_PIN) == LOW;
-  bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+  bool fanOn = isRelayOn(DOOR_FAN_PIN);
+  bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
   bool shouldBeOn = doorFanSet || auxFanOn;
 
   if (fanOn == shouldBeOn) return;
 
   Serial.printf("Switching door fan %s \n", fanOn ? "OFF" : "ON");
-  digitalWrite(DOOR_FAN_PIN, fanOn ? HIGH : LOW);
+  switchRelay(DOOR_FAN_PIN, !fanOn);
 }
 
 void notifyWsClients() {
@@ -405,11 +405,11 @@ void notifyWsClients() {
 
   wsMessage[Byte_HeaterDutyCycle] = (u8_t)(heaterLastDutyCycle * 255);
 
-  bool heaterOn = digitalRead(HEATER_PIN) == LOW;
-  bool lightOn = digitalRead(LIGHT_PIN) == LOW;
-  bool heaterFanOn = digitalRead(HEATER_FAN_PIN) == LOW;
-  bool doorFanOn = digitalRead(DOOR_FAN_PIN) == LOW;
-  bool auxFanOn = digitalRead(AUX_FAN_PIN) == LOW;
+  bool heaterOn = isRelayOn(HEATER_PIN);
+  bool lightOn = isRelayOn(LIGHT_PIN);
+  bool heaterFanOn = isRelayOn(HEATER_FAN_PIN);
+  bool doorFanOn = isRelayOn(DOOR_FAN_PIN);
+  bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
   wsMessage[Byte_Flags] |=
     (heaterOn << Flag_HeaterOn) |
