@@ -16,7 +16,7 @@
 
 #define LOOP_INTERVAL_MS 2500
 
-#define LIGHT_BUTTON_PIN 22
+#define LIGHT_BUTTON_PIN 23
 #define LIGHT_BUTTON_DEBOUNCE_MS 1000
 
 #define LIGHT_PIN 13
@@ -25,7 +25,7 @@
 #define HEATER_FAN_PIN 27
 #define HEATER_PIN 26
 
-#define DHT_PIN 23
+#define DHT_PIN 32
 #define HEATER_TEMP_PIN 36
 #define REF_VOLTAGE_PIN 39
 
