@@ -4,7 +4,8 @@ Preferences prefs;
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
-volatile bool newWsMessage = false;
+u32_t lightButtonPressTime = 0;
+volatile bool loopRunRequested = false;
 
 // All temperatures in DegC if otherwise not specified
 float temp = TEMP_ERROR_VALUE;
@@ -39,6 +40,9 @@ void setup() {
   pinMode(HEATER_PIN, OUTPUT);
   switchRelayOff(HEATER_PIN);
 
+  pinMode(LIGHT_BUTTON_PIN, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(LIGHT_BUTTON_PIN), handleLightButtonPress, FALLING);
+
   dht.reset();
 
   prefs.begin(PREFS_NAMESPACE, false);
@@ -69,9 +73,9 @@ void loop() {
   static u32_t lastCycleTime = 0;
 
   u32_t currentTime = millis();
-  if (!newWsMessage && currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
+  if (!loopRunRequested && currentTime - lastCycleTime < LOOP_INTERVAL_MS) return;
 
-  newWsMessage = false;
+  loopRunRequested = false;
   lastCycleTime = currentTime;
 
   readChamberTemp();
@@ -84,6 +88,16 @@ void loop() {
 
   notifyWsClients();
   ws.cleanupClients();
+}
+
+void IRAM_ATTR handleLightButtonPress() {
+  u32_t currentTime = millis();
+  bool buttonOn = digitalRead(LIGHT_BUTTON_PIN) == LOW;
+  if (!buttonOn || currentTime - lightButtonPressTime < LIGHT_BUTTON_DEBOUNCE_MS) return;
+
+  switchRelay(LIGHT_PIN, !isRelayOn(LIGHT_PIN));
+  loopRunRequested = true;
+  lightButtonPressTime = currentTime;
 }
 
 void initWifi(String ssid, String pass) {
@@ -112,7 +126,7 @@ void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventTyp
   switch (type) {
   case WS_EVT_CONNECT:
     Serial.printf("WebSocket client #%u connected from %s \n", client->id(), client->remoteIP().toString().c_str());
-    newWsMessage = true;
+    loopRunRequested = true;
     break;
   case WS_EVT_DISCONNECT:
     Serial.printf("WebSocket client #%u disconnected \n", client->id());
@@ -170,7 +184,7 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   }
   }
 
-  newWsMessage = true;
+  loopRunRequested = true;
 }
 
 void receiveSerial() {

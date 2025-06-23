@@ -16,6 +16,9 @@
 
 #define LOOP_INTERVAL_MS 2500
 
+#define LIGHT_BUTTON_PIN 22
+#define LIGHT_BUTTON_DEBOUNCE_MS 1000
+
 #define LIGHT_PIN 13
 #define AUX_FAN_PIN 12
 #define DOOR_FAN_PIN 14
@@ -99,6 +102,7 @@ enum WsRequestCode {
   WsRequest_SetAuxFan = 0xa6,
 };
 
+void IRAM_ATTR handleLightButtonPress();
 void initWifi(String ssid, String pass);
 void initWebSocket();
 void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len);
