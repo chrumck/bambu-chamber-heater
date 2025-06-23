@@ -60,10 +60,11 @@ void setup() {
   if (!LittleFS.begin(true)) Serial.println("An error has occurred while mounting LittleFS");
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send(LittleFS, "/index.html", "text/html");
+    AsyncWebServerResponse* response = request->beginResponse(LittleFS, "/index.html.gz", "text/html");
+    response->addHeader("Content-Encoding", "gzip");
+    request->send(response);
     });
 
-  server.serveStatic("/", LittleFS, "/");
   server.begin();
 }
 

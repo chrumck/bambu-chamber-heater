@@ -6,7 +6,12 @@ const config = {
   preprocess: vitePreprocess(),
 
   kit: {
-    adapter: adapter({ fallback: "index.html" }),
+    adapter: adapter({
+      pages: "build_front",
+      assets: "build_front",
+      fallback: "index.html",
+      precompress: true,
+    }),
     output: {
       bundleStrategy: "inline",
     },

@@ -7,16 +7,14 @@
   const { children } = $props();
 
   const loadIcon: Attachment = (element) => {
-    (async () => {
-      const iconUrl = await getObjectUrlFromUrl(icon);
-      element.setAttribute("href", iconUrl);
+    (() => {
+      element.setAttribute("href", icon);
     })();
   };
 
   const loadManifest: Attachment = (element) => {
-    (async () => {
-      const iconUrl = await getObjectUrlFromUrl(icon);
-      const manifestUrl = getObjectUrl(getManifest(iconUrl), "application/manifest+json");
+    (() => {
+      const manifestUrl = getObjectUrl(getManifest(icon), "application/manifest+json");
       element.setAttribute("href", manifestUrl);
     })();
   };
