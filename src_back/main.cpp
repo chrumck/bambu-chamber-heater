@@ -158,7 +158,7 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   }
   case WsRequest_SetHeaterTimeLeft: {
     u16_t timeLeftMins = data[1] | (data[2] << 8);
-    heaterOnMaxTime = millis() + timeLeftMins * 60000;
+    heaterOnMaxTime = millis() + timeLeftMins * 60000 + 10000; // Add 10 seconds extra
     Serial.printf("Setting heater on time left to %d minutes \n", timeLeftMins);
     break;
   }
