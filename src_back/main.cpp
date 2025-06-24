@@ -348,7 +348,7 @@ void controlHeaterFan() {
   u32_t currentTime = millis();
   u32_t timeLeftToRun = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
 
-  bool shouldBeOn = heaterOn || heaterFanSet || timeLeftToRun > 0 || heaterR < HEATER_R_FAN_ON;
+  bool shouldBeOn = heaterOn || heaterFanSet || timeLeftToRun > 0 || (!fanOn && heaterR < HEATER_R_FAN_ON);
   if (fanOn && shouldBeOn) return;
 
   bool shouldBeOff = !heaterOn && !heaterFanSet && timeLeftToRun == 0 && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND;
@@ -359,42 +359,30 @@ void controlHeaterFan() {
 }
 
 void controlAuxFan() {
-  bool auxFanOn = isRelayOn(AUX_FAN_PIN);
-
-  if (!auxFanOn && auxFanSet) {
-    Serial.println("Aux fan requested by user, switching aux fan ON");
-    switchRelayOn(AUX_FAN_PIN);
-    return;
-  }
-
-  if (temp == TEMP_ERROR_VALUE) {
-    if (auxFanOn) return;
-    Serial.println("Chamber temp unknown, switching aux fan ON");
-    switchRelayOn(AUX_FAN_PIN);
-    return;
-  }
+  bool fanOn = isRelayOn(AUX_FAN_PIN);
 
   float auxFanTemp = temp - AUX_FAN_ON_TEMP;
+  bool shouldBeOn = auxFanSet || temp == TEMP_ERROR_VALUE || (!fanOn && auxFanTemp > tempSet);
+  if (fanOn && shouldBeOn) return;
 
-  if (!auxFanOn && auxFanTemp > tempSet) {
-    Serial.println("Chamber temp too high, switching aux fan ON");
-    switchRelayOn(AUX_FAN_PIN);
-    return;
-  }
+  bool shouldBeOff = !auxFanSet && temp != TEMP_ERROR_VALUE && (fanOn && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND);
+  if (!fanOn && shouldBeOff) return;
 
-  if (auxFanOn && !auxFanSet && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
-    Serial.println("Chamber temp below set, switching aux fan OFF");
-    switchRelayOff(AUX_FAN_PIN);
-  }
+  Serial.printf("Switching aux fan %s \n", fanOn ? "OFF" : "ON");
+  switchRelay(AUX_FAN_PIN, !fanOn);
 }
 
 void controlDoorFan() {
   bool fanOn = isRelayOn(DOOR_FAN_PIN);
   bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
-  bool shouldBeOn = doorFanSet || auxFanOn;
+  float doorFanTemp = temp - DOOR_FAN_ON_TEMP;
 
-  if (fanOn == shouldBeOn) return;
+  bool shouldBeOn = doorFanSet || auxFanOn || (!fanOn && doorFanTemp > tempSet);
+  if (fanOn && shouldBeOn) return;
+
+  bool shouldBeOff = !doorFanSet && !auxFanOn && (fanOn && doorFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND);
+  if (!fanOn && shouldBeOff) return;
 
   Serial.printf("Switching door fan %s \n", fanOn ? "OFF" : "ON");
   switchRelay(DOOR_FAN_PIN, !fanOn);
