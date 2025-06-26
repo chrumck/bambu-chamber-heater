@@ -67,7 +67,7 @@
 // #define HEATER_R_OFF 5070 // 110 degC
 // #define HEATER_R_OFF 3850 // 120 degC
 
-#define DEFAULT_TEMP_SET 30
+#define DEFAULT_TEMP_SET 60
 #define CHAMBER_TEMP_ON_DEADBAND 0.3
 #define AUX_FAN_ON_TEMP 2.0
 #define DOOR_FAN_ON_TEMP 1.0
