@@ -418,8 +418,8 @@ void notifyWsClients() {
   wsMessage[Byte_TempSet] = tempSet;
 
   u32_t currentTime = millis();
-  u32_t heaterTimeLeftMs = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) : 0;
-  u16_t heaterTimeLeftMins = heaterTimeLeftMins / 60000;
+  u32_t heaterTimeLeftSeconds = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 1000 : 0;
+  u16_t heaterTimeLeftMins = heaterTimeLeftSeconds / 60;
   wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterTimeLeftMins & 0xFF;
   wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterTimeLeftMins >> 8) & 0xFF;
 
@@ -448,8 +448,8 @@ void notifyWsClients() {
   ws.binaryAll(wsMessage, WS_MESSAGE_LENGTH);
 
   Serial.printf(
-    "Temp: %.2f, Set:%d, TimeLeftMs:%d, vRef:%.4f, heaterV:%.4f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
-    temp, tempSet, heaterTimeLeftMs, vRef, heaterV, (u32_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
+    "Temp: %.2f, Set:%d, TimeLeftSec:%d, vRef:%.4f, heaterV:%.4f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
+    temp, tempSet, heaterTimeLeftSeconds, vRef, heaterV, (u32_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
 }
 
 
