@@ -14,10 +14,22 @@
 
   const { isOpen, label, min, max, step, startValue, submit, close }: PopupProps = $props();
 
-  let value = $state(startValue);
+  let wasOpen = false;
+  let value: number | null = $state(null);
   let popupElement = $state();
 
-  $effect(() => void (isOpen && (value = startValue)));
+  $effect(() => {
+    if (!isOpen) {
+      wasOpen = false;
+      value = null;
+      return;
+    }
+
+    if (!wasOpen && isOpen) {
+      wasOpen = true;
+      value = startValue;
+    }
+  });
 </script>
 
 <svelte:window on:keyup={({ key }) => key === "Escape" && close()} />

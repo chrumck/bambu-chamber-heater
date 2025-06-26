@@ -76,7 +76,7 @@
     </div>
     <div class="flexRow">
       <Gauge horizontal label="HeaterR" value={appState.heaterR} invalidValue={0} />
-      <Gauge horizontal label="Duty Cycle" value={appState.heaterDutyCycle} invalidValue={0} />
+      <Gauge horizontal label="Duty Cycle" value={appState.heaterDutyCycle} invalidValue={0} precision={2} />
     </div>
   </fieldset>
 
