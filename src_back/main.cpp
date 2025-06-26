@@ -127,11 +127,8 @@ void initWebSocket() {
 void wsOnEvent(AsyncWebSocket* server, AsyncWebSocketClient* client, AwsEventType type, void* arg, uint8_t* data, size_t len) {
   switch (type) {
   case WS_EVT_CONNECT:
-    Serial.printf("WebSocket client #%u connected from %s \n", client->id(), client->remoteIP().toString().c_str());
-    loopRunRequested = true;
-    break;
   case WS_EVT_DISCONNECT:
-    Serial.printf("WebSocket client #%u disconnected \n", client->id());
+    loopRunRequested = true;
     break;
   case WS_EVT_DATA:
     handleWebSocketMessage(arg, data, len);
@@ -146,42 +143,33 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   AwsFrameInfo* info = (AwsFrameInfo*)arg;
   if (!info->final || info->index != 0 || info->len != length || info->opcode != WS_BINARY) return;
 
-  if (length != 2 && (data[0] == WsRequest_SetHeaterTimeLeft && length != 3)) {
-    Serial.printf("Invalid ws request length of %d for requestcode: %x \n", length, data[0]);
-    return;
-  }
+  if (length != 2 && (data[0] == WsRequest_SetHeaterTimeLeft && length != 3)) { return; }
 
   switch (data[0]) {
   case WsRequest_SetTemp: {
     tempSet = data[1];
-    Serial.printf("Setting chamber temp to %d \n", tempSet);
     break;
   }
   case WsRequest_SetHeaterTimeLeft: {
     u16_t timeLeftMins = data[1] | (data[2] << 8);
     heaterOnMaxTime = millis() + timeLeftMins * 60000 + SET_TIME_EXTRA_MS;
-    Serial.printf("Setting heater on time left to %d minutes \n", timeLeftMins);
     break;
   }
   case WsRequest_SetLight: {
     bool lightOn = data[1] == 1;
-    Serial.printf("Setting light to %s \n", lightOn ? "ON" : "OFF");
     switchRelay(LIGHT_PIN, lightOn);
     break;
   }
   case WsRequest_SetHeaterFan: {
     heaterFanSet = data[1] == 1;
-    Serial.printf("Setting heater fan to %s \n", heaterFanSet ? "ON" : "OFF");
     break;
   }
   case WsRequest_SetDoorFan: {
     doorFanSet = data[1] == 1;
-    Serial.printf("Setting door vent fan to %s \n", doorFanSet ? "ON" : "OFF");
     break;
   }
   case WsRequest_SetAuxFan: {
     auxFanSet = data[1] == 1;
-    Serial.printf("Setting aux fan to %s \n", auxFanSet ? "ON" : "OFF");
     break;
   }
   }
