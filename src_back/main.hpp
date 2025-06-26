@@ -19,15 +19,15 @@
 #define LIGHT_BUTTON_PIN 23
 #define LIGHT_BUTTON_DEBOUNCE_MS 1000
 
-#define LIGHT_PIN 13
-#define AUX_FAN_PIN 12
-#define DOOR_FAN_PIN 14
+#define LIGHT_PIN 14
+#define AUX_FAN_PIN 26
+#define DOOR_FAN_PIN 12
 #define HEATER_FAN_PIN 27
-#define HEATER_PIN 26
+#define HEATER_PIN 13
 
 #define DHT_PIN 32
-#define HEATER_TEMP_PIN 36
-#define REF_VOLTAGE_PIN 39
+#define HEATER_V_PIN 36
+#define REF_V_PIN 39
 
 #define DHT_MAX_FAIL_COUNT 5
 #define TEMP_ERROR_VALUE (-WS_MESSAGE_TEMP_OFFSET)
@@ -45,7 +45,7 @@
 #define switchRelayOn(_pin) switchRelay(_pin, true)
 #define switchRelayOff(_pin) switchRelay(_pin, false)
 
-#define HEATER_REF_R 4700
+#define HEATER_REF_R 4745
 #define HEATER_REF_V_MIN 3100
 #define HEATER_REF_V_MAX 3500
 #define HEATER_REF_V_ADC_RATIO 2

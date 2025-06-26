@@ -250,7 +250,7 @@ void readHeaterR() {
   heaterR = 0;
 
   for (int i = 0; i < ANALOG_READ_COUNT; i++) {
-    int32_t currentVRef = readAdcMilliVolts(REF_VOLTAGE_PIN) * HEATER_REF_V_ADC_RATIO;
+    int32_t currentVRef = readAdcMilliVolts(REF_V_PIN) * HEATER_REF_V_ADC_RATIO;
     if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
       Serial.printf("Reference voltage out of bounds: %.2f \n", currentVRef / 1000.0);
       vRef = 0.0;
@@ -261,7 +261,7 @@ void readHeaterR() {
 
     vRef += currentVRef / 1000.0;
 
-    float heaterV = readAdcMilliVolts(HEATER_TEMP_PIN) / 1000.0;
+    float heaterV = readAdcMilliVolts(HEATER_V_PIN) / 1000.0;
     heaterR += heaterV * HEATER_REF_R / (currentVRef - heaterV);
   }
 
