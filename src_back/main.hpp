@@ -36,20 +36,25 @@
 #define ANALOG_READ_NUM 980
 #define ANALOG_READ_DEN 1000
 #define ANALOG_READ_OFFSET (-20)
+#define ADC_MAX_FAIL_COUNT 10
 
 #define readAdcMilliVolts(_pin) \
-   ((int32_t)analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN + ANALOG_READ_OFFSET)
+   (((int32_t)analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN) + ANALOG_READ_OFFSET)
 
 #define isRelayOn(_pin) (digitalRead(_pin) == HIGH)
 #define switchRelay(_pin, _on) digitalWrite(_pin, _on ? HIGH : LOW)
 #define switchRelayOn(_pin) switchRelay(_pin, true)
 #define switchRelayOff(_pin) switchRelay(_pin, false)
 
-#define HEATER_REF_R 4745
-#define HEATER_REF_V_MIN 3100
-#define HEATER_REF_V_MAX 3500
-#define HEATER_REF_V_ADC_RATIO 2
+#define REF_R 4745
+#define REF_V_DEFAULT 3.25
+#define REF_V_MIN 3.1
+#define REF_V_MAX 3.5
+#define REF_V_ADC_RATIO 2
 
+#define HEATER_V_MIN 0.05
+#define HEATER_V_MAX 3.10
+#define HEATER_V_DEFAULT 1.941 // corresponds to ~100 degC @ vRef = 3.3V
 #define HEATER_R_MAX 200000
 #define HEATER_R_MIN 120
 #define HEATER_R_FAN_ON 35899 // 50 degC

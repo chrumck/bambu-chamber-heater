@@ -10,10 +10,11 @@ volatile bool loopRunRequested = false;
 // All temperatures in DegC if otherwise not specified
 float temp = TEMP_ERROR_VALUE;
 u8_t tempSet = DEFAULT_TEMP_SET;
-u32_t dhtFailCount = DHT_MAX_FAIL_COUNT;
+u8_t dhtFailCount = DHT_MAX_FAIL_COUNT;
 
-float vRef = 0;
-float heaterR = 0;
+float vRef = 0.0;
+float heaterV = 0.0;
+float heaterR = 0.0;
 float heaterLastDutyCycle = 0.0;
 
 // All times are in milliseconds from last boot if otherwise not specified
@@ -247,29 +248,48 @@ void readChamberTemp() {
 
 void readHeaterR() {
   vRef = 0;
+  heaterV = 0;
   heaterR = 0;
 
+  u16_t adcFailCount = 0;
+  float vRefSum = 0;
+  float heaterVSum = 0;
+
   for (int i = 0; i < ANALOG_READ_COUNT; i++) {
-    int32_t currentVRef = readAdcMilliVolts(REF_V_PIN) * HEATER_REF_V_ADC_RATIO;
-    if (currentVRef < HEATER_REF_V_MIN || currentVRef > HEATER_REF_V_MAX) {
-      Serial.printf("Reference voltage out of bounds: %.2f \n", currentVRef / 1000.0);
+    float currentVRef = readAdcMilliVolts(REF_V_PIN) * REF_V_ADC_RATIO / 1000.0;
+    if (currentVRef >= REF_V_MIN && currentVRef <= REF_V_MAX) {
+      vRefSum += currentVRef;
+    }
+    else {
+      adcFailCount++;
+      vRefSum += REF_V_DEFAULT;
+    }
+
+    float currentHeaterV = readAdcMilliVolts(HEATER_V_PIN) / 1000.0;
+    if (currentHeaterV >= HEATER_V_MIN && currentHeaterV <= HEATER_V_MAX) {
+      heaterVSum += currentHeaterV;
+    }
+    else {
+      adcFailCount++;
+      heaterVSum += HEATER_V_DEFAULT;
+    }
+
+    if (adcFailCount >= ADC_MAX_FAIL_COUNT) {
+      Serial.println("Too many ADC read failures, setting ADC data to 0");
       vRef = 0.0;
+      heaterV = 0.0;
       heaterR = 0.0;
       setHeater(false);
       return;
     }
-
-    vRef += currentVRef / 1000.0;
-
-    float heaterV = readAdcMilliVolts(HEATER_V_PIN) / 1000.0;
-    heaterR += heaterV * HEATER_REF_R / (currentVRef - heaterV);
   }
 
-  vRef /= ANALOG_READ_COUNT;
-  heaterR /= ANALOG_READ_COUNT;
+  vRef = vRefSum / ANALOG_READ_COUNT;
+  heaterV = heaterVSum / ANALOG_READ_COUNT;
+  heaterR = heaterV * REF_R / (vRef - heaterV);
 
   if (heaterR > HEATER_R_MAX || heaterR < HEATER_R_MIN) {
-    Serial.printf("Heater temperature resistance out of bounds: %.0f \n", heaterR);
+    Serial.printf("Heater R out of bounds: %.0f \n", heaterR);
     heaterR = 0;
     setHeater(false);
   }
@@ -398,11 +418,12 @@ void notifyWsClients() {
   wsMessage[Byte_TempSet] = tempSet;
 
   u32_t currentTime = millis();
-  u16_t heaterTimeLeftMins = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 60000 : 0;
+  u32_t heaterTimeLeftMs = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) : 0;
+  u16_t heaterTimeLeftMins = heaterTimeLeftMins / 60000;
   wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterTimeLeftMins & 0xFF;
   wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterTimeLeftMins >> 8) & 0xFF;
 
-  u16_t heaterRBytes = (u16_t)heaterR;
+  u16_t heaterRBytes = heaterR > 0xFFFF ? 0xFFFF : (u16_t)heaterR;
   wsMessage[Byte_HeaterR_1] = heaterRBytes & 0xFF;
   wsMessage[Byte_HeaterR_2] = (heaterRBytes >> 8) & 0xFF;
 
@@ -427,8 +448,8 @@ void notifyWsClients() {
   ws.binaryAll(wsMessage, WS_MESSAGE_LENGTH);
 
   Serial.printf(
-    "Temp: %.2f, Set:%d, TimeLeftMins:%d, Vref:%.2f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
-    temp, tempSet, heaterTimeLeftMins, vRef, (u16_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
+    "Temp: %.2f, Set:%d, TimeLeftMs:%d, vRef:%.4f, heaterV:%.4f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
+    temp, tempSet, heaterTimeLeftMs, vRef, heaterV, (u32_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
 }
 
 
