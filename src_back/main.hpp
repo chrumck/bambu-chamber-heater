@@ -16,6 +16,8 @@
 
 #define LOOP_INTERVAL_MS 2500
 
+#define SET_TIME_EXTRA_MS 3000
+
 #define LIGHT_BUTTON_PIN 16
 #define LIGHT_BUTTON_DEBOUNCE_MS 1000
 
@@ -30,6 +32,7 @@
 #define REF_V_PIN 39
 
 #define DHT_MAX_FAIL_COUNT 5
+#define TEMP_DEFAULT 30.0
 #define TEMP_ERROR_VALUE (-WS_MESSAGE_TEMP_OFFSET)
 
 #define ANALOG_READ_COUNT 100
@@ -57,8 +60,8 @@
 #define HEATER_V_DEFAULT 1.941 // corresponds to ~100 degC @ vRef = 3.3V
 #define HEATER_R_MAX 200000
 #define HEATER_R_MIN 120
-#define HEATER_R_FAN_ON 35899 // 50 degC
-#define HEATER_R_DEADBAND 1000
+#define HEATER_R_FAN_ON 20900 // 65 degC
+#define HEATER_R_DEADBAND 5000
 #define HEATER_R_ON 4410  // 115 degC
 #define HEATER_R_OFF 3340  // 125 degC
 

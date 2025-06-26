@@ -8,9 +8,9 @@ u32_t lightButtonPressTime = 0;
 volatile bool loopRunRequested = false;
 
 // All temperatures in DegC if otherwise not specified
-float temp = TEMP_ERROR_VALUE;
+float temp = TEMP_DEFAULT;
 u8_t tempSet = DEFAULT_TEMP_SET;
-u8_t dhtFailCount = DHT_MAX_FAIL_COUNT;
+u8_t dhtFailCount = 0;
 
 float vRef = 0.0;
 float heaterV = 0.0;
@@ -159,7 +159,7 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   }
   case WsRequest_SetHeaterTimeLeft: {
     u16_t timeLeftMins = data[1] | (data[2] << 8);
-    heaterOnMaxTime = millis() + timeLeftMins * 60000 + 10000; // Add 10 seconds extra
+    heaterOnMaxTime = millis() + timeLeftMins * 60000 + SET_TIME_EXTRA_MS;
     Serial.printf("Setting heater on time left to %d minutes \n", timeLeftMins);
     break;
   }
@@ -358,26 +358,28 @@ void setHeater(bool on) {
 
 void controlHeaterFan() {
   bool fanOn = isRelayOn(HEATER_FAN_PIN);
-
-  if (heaterR == 0) {
-    if (fanOn) return;
-    Serial.println("Heater R unknown, switching heater fan ON");
-    switchRelayOn(HEATER_FAN_PIN);
-    return;
-  }
-
   bool heaterOn = isRelayOn(HEATER_PIN);
   u32_t currentTime = millis();
   u32_t timeLeftToRun = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
 
-  bool shouldBeOn = heaterOn || heaterFanSet || timeLeftToRun > 0 || (!fanOn && heaterR < HEATER_R_FAN_ON);
-  if (fanOn && shouldBeOn) return;
+  if (heaterR == 0 || heaterOn || heaterFanSet || timeLeftToRun > 0) {
+    if (fanOn) return;
+    Serial.println("Switching heater fan ON");
+    switchRelayOn(HEATER_FAN_PIN);
+    return;
+  }
 
-  bool shouldBeOff = !heaterOn && !heaterFanSet && timeLeftToRun == 0 && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND;
-  if (!fanOn && shouldBeOff) return;
+  if (!fanOn && heaterR < HEATER_R_FAN_ON) {
+    Serial.println("Heater R too low, switching heater fan ON");
+    switchRelayOn(HEATER_FAN_PIN);
+    return;
+  }
 
-  Serial.printf("Switching heater fan %s \n", fanOn ? "OFF" : "ON");
-  switchRelay(HEATER_FAN_PIN, !fanOn);
+  if (fanOn && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND) {
+    Serial.println("Heater R low enough, switching heater fan OFF");
+    switchRelayOff(HEATER_FAN_PIN);
+    return;
+  }
 }
 
 void controlAuxFan() {
@@ -411,7 +413,7 @@ void controlDoorFan() {
   if (doorFanSet || auxFanOn || temp == TEMP_ERROR_VALUE) {
     if (fanOn) return;
     Serial.println("Switching door fan ON");
-    switchRelayOn(AUX_FAN_PIN);
+    switchRelayOn(DOOR_FAN_PIN);
     return;
   }
 
