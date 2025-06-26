@@ -229,6 +229,8 @@ void savePrefs(const char* prefsKey, String prefsValue) {
 void readChamberTemp() {
   int chamberTempReadResult = dht.read();
 
+  if (chamberTempReadResult == DHTLIB_WAITING_FOR_READ) { return; }
+
   if (chamberTempReadResult == DHTLIB_OK) {
     dhtFailCount = 0;
     temp = dht.getTemperature();
@@ -381,31 +383,50 @@ void controlHeaterFan() {
 void controlAuxFan() {
   bool fanOn = isRelayOn(AUX_FAN_PIN);
 
+  if (auxFanSet || temp == TEMP_ERROR_VALUE) {
+    if (fanOn) return;
+    Serial.println("Switching aux fan ON");
+    switchRelayOn(AUX_FAN_PIN);
+    return;
+  }
+
   float auxFanTemp = temp - AUX_FAN_ON_TEMP;
-  bool shouldBeOn = auxFanSet || temp == TEMP_ERROR_VALUE || (!fanOn && auxFanTemp > tempSet);
-  if (fanOn && shouldBeOn) return;
+  if (!fanOn && auxFanTemp > tempSet) {
+    Serial.println("Chamber temp too high, switching aux fan ON");
+    switchRelayOn(AUX_FAN_PIN);
+    return;
+  }
 
-  bool shouldBeOff = !auxFanSet && temp != TEMP_ERROR_VALUE && (fanOn && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND);
-  if (!fanOn && shouldBeOff) return;
-
-  Serial.printf("Switching aux fan %s \n", fanOn ? "OFF" : "ON");
-  switchRelay(AUX_FAN_PIN, !fanOn);
+  if (fanOn && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
+    Serial.println("Chamber temp low enough, switching aux fan OFF");
+    switchRelayOff(AUX_FAN_PIN);
+    return;
+  }
 }
 
 void controlDoorFan() {
   bool fanOn = isRelayOn(DOOR_FAN_PIN);
   bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
+  if (doorFanSet || auxFanOn || temp == TEMP_ERROR_VALUE) {
+    if (fanOn) return;
+    Serial.println("Switching door fan ON");
+    switchRelayOn(AUX_FAN_PIN);
+    return;
+  }
+
   float doorFanTemp = temp - DOOR_FAN_ON_TEMP;
+  if (!fanOn && doorFanTemp > tempSet) {
+    Serial.println("Chamber temp too high, switching door fan ON");
+    switchRelayOn(DOOR_FAN_PIN);
+    return;
+  }
 
-  bool shouldBeOn = doorFanSet || auxFanOn || (!fanOn && doorFanTemp > tempSet);
-  if (fanOn && shouldBeOn) return;
-
-  bool shouldBeOff = !doorFanSet && !auxFanOn && (fanOn && doorFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND);
-  if (!fanOn && shouldBeOff) return;
-
-  Serial.printf("Switching door fan %s \n", fanOn ? "OFF" : "ON");
-  switchRelay(DOOR_FAN_PIN, !fanOn);
+  if (fanOn && doorFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
+    Serial.println("Chamber temp low enough, switching door fan OFF");
+    switchRelayOff(DOOR_FAN_PIN);
+    return;
+  }
 }
 
 void notifyWsClients() {
