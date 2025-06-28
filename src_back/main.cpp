@@ -203,6 +203,11 @@ void receiveSerial() {
     return;
   }
 
+  if (message.equals("reset_reason")) {
+    Serial.printf("Reset reason: %d \n", esp_reset_reason());
+    return;
+  }
+
   Serial.println("Command not recognized");
 }
 
