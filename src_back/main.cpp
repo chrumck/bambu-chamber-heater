@@ -42,7 +42,6 @@ void setup() {
   switchRelayOff(HEATER_PIN);
 
   pinMode(LIGHT_BUTTON_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(LIGHT_BUTTON_PIN), handleLightButtonPress, FALLING);
 
   dht.reset();
 
@@ -70,6 +69,8 @@ void setup() {
 }
 
 void loop() {
+  handleLightButtonPress();
+
   receiveSerial();
 
   static u32_t lastCycleTime = 0;
@@ -92,10 +93,10 @@ void loop() {
   ws.cleanupClients();
 }
 
-void IRAM_ATTR handleLightButtonPress() {
+void handleLightButtonPress() {
   u32_t currentTime = millis();
-  bool buttonOn = digitalRead(LIGHT_BUTTON_PIN) == LOW;
-  if (!buttonOn || currentTime - lightButtonPressTime < LIGHT_BUTTON_DEBOUNCE_MS) return;
+  if (currentTime - lightButtonPressTime < LIGHT_BUTTON_DEBOUNCE_MS) return;
+  if (digitalRead(LIGHT_BUTTON_PIN) != LOW) return;
 
   switchRelay(LIGHT_PIN, !isRelayOn(LIGHT_PIN));
   loopRunRequested = true;
