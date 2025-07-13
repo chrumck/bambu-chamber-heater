@@ -28,7 +28,7 @@
 #define HEATER_PIN 13
 
 #define DHT_PIN 32
-#define HEATER_V_PIN 36
+#define HEATER_R_PIN 36
 #define REF_V_PIN 39
 
 #define DHT_MAX_FAIL_COUNT 5

@@ -261,7 +261,7 @@ void readHeaterR() {
       vRefSum += REF_V_DEFAULT;
     }
 
-    float currentHeaterV = readAdcMilliVolts(HEATER_V_PIN) / 1000.0;
+    float currentHeaterV = readAdcMilliVolts(HEATER_R_PIN) / 1000.0;
     if (currentHeaterV >= HEATER_V_MIN && currentHeaterV <= HEATER_V_MAX) {
       heaterVSum += currentHeaterV;
     }
