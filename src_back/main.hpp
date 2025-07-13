@@ -49,11 +49,11 @@
 #define switchRelayOn(_pin) switchRelay(_pin, true)
 #define switchRelayOff(_pin) switchRelay(_pin, false)
 
-#define REF_R 4745
+#define REF_R 4730
 #define REF_V_DEFAULT 3.25
-#define REF_V_MIN 3.1
+#define REF_V_MIN 3.0
 #define REF_V_MAX 3.5
-#define REF_V_ADC_RATIO 2
+#define REF_V_ADC_RATIO 2.0
 
 #define HEATER_V_MIN 0.05
 #define HEATER_V_MAX 3.10
