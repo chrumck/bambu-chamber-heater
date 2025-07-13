@@ -35,3 +35,6 @@ design/**/*.raw
 .vscode/ipch
 /build_back/
 /data/
+
+# Kicad
+/KiCAD/**/*-backups**/*
