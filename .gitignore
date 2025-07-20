@@ -37,4 +37,5 @@ design/**/*.raw
 /data/
 
 # Kicad
-/KiCAD/**/*-backups**/*
+/KiCAD/**/*-backups**
+/KiCAD/**/*.lck
