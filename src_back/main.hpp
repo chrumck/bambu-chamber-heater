@@ -21,11 +21,11 @@
 #define LIGHT_BUTTON_PIN 16
 #define LIGHT_BUTTON_DEBOUNCE_MS 1000
 
-#define LIGHT_PIN 14
-#define AUX_FAN_PIN 26
-#define DOOR_FAN_PIN 12
-#define HEATER_FAN_PIN 27
-#define HEATER_PIN 13
+#define LIGHT_PIN 18
+#define HEATER_FAN_PIN 19
+#define AUX_FAN_PIN 21
+#define DOOR_FAN_PIN 22
+#define HEATER_PIN 23
 
 #define DHT_PIN 32
 #define HEATER_R_PIN 36
