@@ -39,7 +39,7 @@
 #define ANALOG_READ_NUM 980
 #define ANALOG_READ_DEN 1000
 #define ANALOG_READ_OFFSET (-20)
-#define ADC_MAX_FAIL_COUNT 10
+#define ADC_MAX_FAIL_COUNT 3
 
 #define readAdcMilliVolts(_pin) \
    (((int32_t)analogReadMilliVolts(_pin) * ANALOG_READ_NUM / ANALOG_READ_DEN) + ANALOG_READ_OFFSET)
