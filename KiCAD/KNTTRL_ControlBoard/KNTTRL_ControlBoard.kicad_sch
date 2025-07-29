@@ -2702,16 +2702,6 @@
 	)
 	(wire
 		(pts
-			(xy 170.18 130.81) (xy 170.18 132.08)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1dd37148-8e74-4a41-a5e7-7ec59dbee09f")
-	)
-	(wire
-		(pts
 			(xy 182.88 99.06) (xy 82.55 99.06)
 		)
 		(stroke
@@ -2879,6 +2869,16 @@
 			(type default)
 		)
 		(uuid "4e69d5fe-6b6b-4c89-aa7e-af62c22df57d")
+	)
+	(wire
+		(pts
+			(xy 170.18 114.3) (xy 170.18 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "50daced0-5fb0-4860-b669-bfb2e86bbf3b")
 	)
 	(wire
 		(pts
@@ -3109,6 +3109,16 @@
 			(type default)
 		)
 		(uuid "99c4e982-bb0c-42f0-837c-e3afae31d914")
+	)
+	(wire
+		(pts
+			(xy 170.18 127) (xy 170.18 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9b4de9ca-852d-4dec-924d-bebd23403635")
 	)
 	(wire
 		(pts
@@ -4376,7 +4386,7 @@
 	)
 	(global_label "GND"
 		(shape input)
-		(at 170.18 123.19 90)
+		(at 170.18 114.3 90)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4386,7 +4396,7 @@
 		)
 		(uuid "e5b43a64-e1bd-43a0-8f1b-9ad937ead200")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 170.18 116.3343 90)
+			(at 170.18 107.4443 90)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6201,8 +6211,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C")
-		(at 170.18 127 0)
+		(lib_id "Device:C_Polarized")
+		(at 170.18 123.19 180)
 		(unit 1)
 		(exclude_from_sim no)
 		(in_bom yes)
@@ -6211,25 +6221,25 @@
 		(fields_autoplaced yes)
 		(uuid "a358b038-a00e-4026-be2f-26ad21af1cbd")
 		(property "Reference" "C103"
-			(at 173.99 125.7299 0)
+			(at 173.99 122.8089 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "100nF"
-			(at 173.99 128.2699 0)
+		(property "Value" "1uF"
+			(at 173.99 125.3489 0)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Footprint" "Capacitor_THT:C_Disc_D5.0mm_W2.5mm_P2.50mm"
-			(at 171.1452 130.81 0)
+		(property "Footprint" "Capacitor_THT:CP_Radial_D5.0mm_P2.50mm"
+			(at 169.2148 119.38 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6238,7 +6248,7 @@
 			)
 		)
 		(property "Datasheet" "~"
-			(at 170.18 127 0)
+			(at 170.18 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
@@ -6246,8 +6256,8 @@
 				(hide yes)
 			)
 		)
-		(property "Description" "Unpolarized capacitor"
-			(at 170.18 127 0)
+		(property "Description" "Polarized capacitor"
+			(at 170.18 123.19 0)
 			(effects
 				(font
 					(size 1.27 1.27)
