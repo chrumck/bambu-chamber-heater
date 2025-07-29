@@ -24,8 +24,8 @@
 #define LIGHT_PIN 18
 #define HEATER_FAN_PIN 19
 #define AUX_FAN_PIN 21
-#define DOOR_FAN_PIN 22
-#define HEATER_PIN 23
+#define DOOR_FAN_PIN 23
+#define HEATER_PIN 22
 
 #define DHT_PIN 32
 #define HEATER_R_PIN 36
