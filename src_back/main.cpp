@@ -8,7 +8,7 @@ u32_t lightButtonPressTime = 0;
 volatile bool loopRunRequested = false;
 
 // All temperatures in DegC if otherwise not specified
-float temp = TEMP_DEFAULT;
+float chamberTemp = TEMP_DEFAULT;
 u8_t tempSet = DEFAULT_TEMP_SET;
 u8_t dhtFailCount = 0;
 
@@ -18,7 +18,7 @@ float heaterR = 0.0;
 float heaterLastDutyCycle = 0.0;
 
 // All times are in milliseconds from last boot if otherwise not specified
-u32_t heaterOnMaxTime = 0;
+u32_t operationMaxTime = 0;
 
 bool heaterFanSet = false;
 bool doorFanSet = false;
@@ -153,7 +153,7 @@ void handleWebSocketMessage(void* arg, uint8_t* data, size_t length) {
   }
   case WsRequest_SetHeaterTimeLeft: {
     u16_t timeLeftMins = data[1] | (data[2] << 8);
-    heaterOnMaxTime = millis() + timeLeftMins * 60000 + SET_TIME_EXTRA_MS;
+    operationMaxTime = millis() + timeLeftMins * 60000 + SET_TIME_EXTRA_MS;
     break;
   }
   case WsRequest_SetLight: {
@@ -227,7 +227,7 @@ void readChamberTemp() {
 
   if (chamberTempReadResult == DHTLIB_OK) {
     dhtFailCount = 0;
-    temp = dht.getTemperature();
+    chamberTemp = dht.getTemperature();
     return;
   }
 
@@ -237,13 +237,13 @@ void readChamberTemp() {
 
   if (dhtFailCount >= DHT_MAX_FAIL_COUNT) {
     Serial.println("Too many failed chamber temp reads, setting temp value to invalid");
-    temp = TEMP_ERROR_VALUE;
+    chamberTemp = TEMP_ERROR_VALUE;
     setHeater(false);
   }
 }
 
 void readHeaterR() {
-  vRef = 0;
+  vRef = REF_V_DEFAULT;
   heaterV = 0;
   heaterR = 0;
 
@@ -293,18 +293,19 @@ void readHeaterR() {
 
 void controlHeater() {
   bool heaterOn = isRelayOn(HEATER_PIN);
-  if (heaterR == 0 || temp == TEMP_ERROR_VALUE) {
-    if (heaterOn) setHeater(false);
+  if (heaterOn && (heaterR == 0 || chamberTemp == TEMP_ERROR_VALUE)) {
+    Serial.println("Switching heater OFF, invalid heaterR or chamberTemp");
+    setHeater(false);
     return;
   }
 
-  if (heaterOn && (heaterR < HEATER_R_OFF || temp > tempSet)) {
+  if (heaterOn && (heaterR < HEATER_R_OFF || chamberTemp > tempSet)) {
     setHeater(false);
     return;
   }
 
   u32_t currentTime = millis();
-  u32_t timeLeftToRunMs = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
+  u32_t timeLeftToRunMs = currentTime > operationMaxTime ? 0 : operationMaxTime - currentTime;
 
   if (heaterOn && timeLeftToRunMs == 0) {
     Serial.println("Max heater time reached");
@@ -315,7 +316,7 @@ void controlHeater() {
   if (!heaterOn &&
     timeLeftToRunMs > 0 &&
     heaterR > HEATER_R_ON &&
-    temp < (tempSet - CHAMBER_TEMP_ON_DEADBAND)
+    chamberTemp < (tempSet - CHAMBER_TEMP_ON_DEADBAND)
     ) {
     setHeater(true);
   }
@@ -353,10 +354,8 @@ void setHeater(bool on) {
 void controlHeaterFan() {
   bool fanOn = isRelayOn(HEATER_FAN_PIN);
   bool heaterOn = isRelayOn(HEATER_PIN);
-  u32_t currentTime = millis();
-  u32_t timeLeftToRun = currentTime > heaterOnMaxTime ? 0 : heaterOnMaxTime - currentTime;
 
-  if (heaterR == 0 || heaterOn || heaterFanSet || timeLeftToRun > 0) {
+  if (heaterR == 0 || heaterOn || heaterFanSet) {
     if (fanOn) return;
     Serial.println("Switching heater fan ON");
     switchRelayOn(HEATER_FAN_PIN);
@@ -364,13 +363,13 @@ void controlHeaterFan() {
   }
 
   if (!fanOn && heaterR < HEATER_R_FAN_ON) {
-    Serial.println("Heater R too low, switching heater fan ON");
+    Serial.println("HeaterR low, switching heater fan ON");
     switchRelayOn(HEATER_FAN_PIN);
     return;
   }
 
   if (fanOn && heaterR > HEATER_R_FAN_ON + HEATER_R_DEADBAND) {
-    Serial.println("Heater R low enough, switching heater fan OFF");
+    Serial.println("HeaterR high, switching heater fan OFF");
     switchRelayOff(HEATER_FAN_PIN);
     return;
   }
@@ -379,21 +378,30 @@ void controlHeaterFan() {
 void controlAuxFan() {
   bool fanOn = isRelayOn(AUX_FAN_PIN);
 
-  if (auxFanSet || temp == TEMP_ERROR_VALUE) {
+  if (auxFanSet || chamberTemp == TEMP_ERROR_VALUE) {
     if (fanOn) return;
     Serial.println("Switching aux fan ON");
     switchRelayOn(AUX_FAN_PIN);
     return;
   }
 
-  float auxFanTemp = temp - AUX_FAN_ON_TEMP;
+  u32_t currentTime = millis();
+  u32_t timeLeftToRunMs = currentTime > operationMaxTime ? 0 : operationMaxTime - currentTime;
+  if (timeLeftToRunMs == 0) {
+    if (!fanOn) return;
+    Serial.println("Max time reached, switching aux fan off");
+    switchRelayOff(AUX_FAN_PIN);
+    return;
+  }
+
+  float auxFanTemp = chamberTemp - AUX_FAN_ON_TEMP;
   if (!fanOn && auxFanTemp > tempSet) {
     Serial.println("Chamber temp too high, switching aux fan ON");
     switchRelayOn(AUX_FAN_PIN);
     return;
   }
 
-  if (fanOn && auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
+  if (fanOn&& auxFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
     Serial.println("Chamber temp low enough, switching aux fan OFF");
     switchRelayOff(AUX_FAN_PIN);
     return;
@@ -404,22 +412,31 @@ void controlDoorFan() {
   bool fanOn = isRelayOn(DOOR_FAN_PIN);
   bool auxFanOn = isRelayOn(AUX_FAN_PIN);
 
-  if (doorFanSet || auxFanOn || temp == TEMP_ERROR_VALUE) {
+  if (doorFanSet || auxFanOn || chamberTemp == TEMP_ERROR_VALUE) {
     if (fanOn) return;
     Serial.println("Switching door fan ON");
     switchRelayOn(DOOR_FAN_PIN);
     return;
   }
 
-  float doorFanTemp = temp - DOOR_FAN_ON_TEMP;
+  u32_t currentTime = millis();
+  u32_t timeLeftToRunMs = currentTime > operationMaxTime ? 0 : operationMaxTime - currentTime;
+  if (timeLeftToRunMs == 0) {
+    if (!fanOn) return;
+    Serial.println("Max time reached, switching door fan off");
+    switchRelayOff(DOOR_FAN_PIN);
+    return;
+  }
+
+  float doorFanTemp = chamberTemp - DOOR_FAN_ON_TEMP;
   if (!fanOn && doorFanTemp > tempSet) {
-    Serial.println("Chamber temp too high, switching door fan ON");
+    Serial.println("Chamber temp high, switching door fan ON");
     switchRelayOn(DOOR_FAN_PIN);
     return;
   }
 
   if (fanOn && doorFanTemp < tempSet - CHAMBER_TEMP_ON_DEADBAND) {
-    Serial.println("Chamber temp low enough, switching door fan OFF");
+    Serial.println("Chamber temp low, switching door fan OFF");
     switchRelayOff(DOOR_FAN_PIN);
     return;
   }
@@ -429,13 +446,13 @@ void notifyWsClients() {
   static u8_t wsMessage[WS_MESSAGE_LENGTH];
   memset(&wsMessage, 0, WS_MESSAGE_LENGTH);
 
-  u16_t tempBytes = (u16_t)((temp + WS_MESSAGE_TEMP_OFFSET) * WS_MESSAGE_TEMP_FACTOR);
+  u16_t tempBytes = (u16_t)((chamberTemp + WS_MESSAGE_TEMP_OFFSET) * WS_MESSAGE_TEMP_FACTOR);
   wsMessage[Byte_Temp_1] = tempBytes & 0xFF;
   wsMessage[Byte_Temp_2] = (tempBytes >> 8) & 0xFF;
   wsMessage[Byte_TempSet] = tempSet;
 
   u32_t currentTime = millis();
-  u32_t heaterTimeLeftSeconds = heaterOnMaxTime > currentTime ? (heaterOnMaxTime - currentTime) / 1000 : 0;
+  u32_t heaterTimeLeftSeconds = operationMaxTime > currentTime ? (operationMaxTime - currentTime) / 1000 : 0;
   u16_t heaterTimeLeftMins = heaterTimeLeftSeconds / 60;
   wsMessage[Byte_HeaterOnTimeLeftMins1] = heaterTimeLeftMins & 0xFF;
   wsMessage[Byte_HeaterOnTimeLeftMins2] = (heaterTimeLeftMins >> 8) & 0xFF;
@@ -466,7 +483,7 @@ void notifyWsClients() {
 
   Serial.printf(
     "Temp: %.2f, Set:%d, TimeLeftSec:%d, vRef:%.4f, heaterV:%.4f, heaterR:%d, DutyCycle:%.2f, heaterOn:%d, lightOn: %d, heaterFanSet:%d, heaterFanOn:%d, doorFanSet:%d, doorFanOn:%d, auxFanSet:%d, auxFanOn:%d \n",
-    temp, tempSet, heaterTimeLeftSeconds, vRef, heaterV, (u32_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
+    chamberTemp, tempSet, heaterTimeLeftSeconds, vRef, heaterV, (u32_t)heaterR, heaterLastDutyCycle, heaterOn, lightOn, heaterFanSet, heaterFanOn, doorFanSet, doorFanOn, auxFanSet, auxFanOn);
 }
 
 
