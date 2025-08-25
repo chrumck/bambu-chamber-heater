@@ -17,6 +17,7 @@
   let wasOpen = false;
   let value: number | null = $state(null);
   let popupElement = $state();
+  let inputElement = $state<HTMLInputElement>();
 
   $effect(() => {
     if (!isOpen) {
@@ -25,10 +26,14 @@
       return;
     }
 
-    if (!wasOpen && isOpen) {
-      wasOpen = true;
-      value = startValue;
-    }
+    if (wasOpen) return;
+
+    wasOpen = true;
+    value = startValue;
+
+    var timeoutId = setTimeout(() => inputElement?.focus(), 100);
+
+    return () => clearTimeout(timeoutId);
   });
 </script>
 
@@ -52,7 +57,7 @@
       }}
     >
       <input class="button" id="btnCancel" type="button" value="CANCEL" onclick={close} />
-      <input type="number" {min} {max} {step} bind:value />
+      <input type="number" {min} {max} {step} bind:value bind:this={inputElement} />
       <input class="button" type="submit" value="OK" disabled={value === null || isNaN(value)} />
     </form>
   </div>
