@@ -31,7 +31,7 @@
     wasOpen = true;
     value = startValue;
 
-    var timeoutId = setTimeout(() => inputElement?.focus(), 100);
+    var timeoutId = setTimeout(() => inputElement?.select(), 100);
 
     return () => clearTimeout(timeoutId);
   });
