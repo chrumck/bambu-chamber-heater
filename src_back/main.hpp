@@ -14,6 +14,7 @@
 #define PREFS_KEY_WIFI_SSID "wifiSsid"
 #define PREFS_KEY_WIFI_PASS "wifiPass"
 
+#define WIFI_RETRY_COUNT 60
 #define LOOP_INTERVAL_MS 2500
 
 #define SET_TIME_EXTRA_MS 3000

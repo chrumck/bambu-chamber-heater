@@ -107,12 +107,19 @@ void initWifi(String ssid, String pass) {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
 
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(ssid);
+  Serial.print("Connecting to WiFi, ssid: ");
+  Serial.print(ssid);
+  Serial.print(", pass: ");
+  Serial.print(pass);
 
+  auto retries = 0;
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print('.');
     delay(1000);
+    if (retries++ >= WIFI_RETRY_COUNT) {
+      Serial.println("Failed to connect to WiFi");
+      return;
+    }
   }
 
   Serial.print("WiFi connected, IP: ");
@@ -120,6 +127,11 @@ void initWifi(String ssid, String pass) {
 }
 
 void initWebSocket() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected, skipping web socket setup");
+    return;
+  }
+
   Serial.println("Initializing web socket");
   ws.onEvent(wsOnEvent);
   server.addHandler(&ws);

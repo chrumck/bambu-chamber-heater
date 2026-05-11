@@ -33,6 +33,7 @@ design/**/*.raw
 .vscode/.browse.c_cpp.db*
 .vscode/c_cpp_properties.json
 .vscode/ipch
+.vscode/launch.json
 /build_back/
 /data/
 
